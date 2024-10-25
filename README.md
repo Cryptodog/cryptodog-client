@@ -35,3 +35,9 @@ For further details regarding Cryptodog's design, see the [Cryptocat Wiki](https
 ## Contact
 
 General queries should be sent to contact@crypto.dog.
+
+### Reporting Abuse
+We (the Cryptodog developers) do not endorse any content that users share over the platform. To report abuse, please email us at contact@crypto.dog. However, please note that:
+
+* Because Cryptodog uses end-to-end (client-side) encryption, we do not have the ability to view the plaintext contents of any messages or files.
+* We do not log or otherwise save encrypted user content; it exists only transiently in server memory.
