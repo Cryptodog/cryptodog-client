@@ -43,6 +43,7 @@
     <script type="application/javascript" src="js/lib/bigint.mod.js"></script>
     <script type="application/javascript" src="js/lib/otr.js"></script>
     <script type="application/javascript" src="js/lib/elliptic.js"></script>
+    <script type="application/javascript" src="js/lib/zxcvbn.js"></script>
     <script type="application/javascript" src="js/etc/locale.js"></script>
 </head>
 
@@ -87,6 +88,7 @@
                     <!-- https://xmpp.org/rfcs/rfc6122.html#addressing-fundamentals -->
 
                     <input type="text" id="conversationName" maxlength="1023" autocomplete="off" dir="ltr" data-utip-gravity="ne" />
+                    <span id="conversationNameStrength" data-utip-gravity="ne" data-utip></span>
                     <input type="text" id="nickname" maxlength="1023" autocomplete="off" dir="ltr" />
                     <input type="submit" id="loginSubmit" dir="ltr" />
                     <div id="loginInfo"></div>

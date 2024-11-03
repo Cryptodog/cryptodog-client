@@ -1274,6 +1274,40 @@ $('#conversationName').click(function() {
 $('#nickname').click(function() {
 	$(this).select();
 })
+
+$('#conversationName').keyup(function (e) {
+	const conversationName = $.trim($('#conversationName').val().toLowerCase());
+	const strength = $("#conversationNameStrength");
+
+	if (!conversationName) {
+		strength.css('visibility', 'hidden').mouseleave();
+		return;
+	}
+
+	if (conversationName === 'lobby') {
+		strength.css('background-color', 'red');
+		strength.css('background-image', 'url("img/icons/warning.svg")');
+		strength.attr('data-utip', 'This is a public room.');
+	} else {
+		const score = zxcvbn(conversationName).score;
+		strength.css('visibility', 'visible');
+		if (score < 4) {
+			strength.css('background-color', score < 3 ? 'red' : 'orange');
+			strength.css('background-image', 'url("img/icons/warning.svg")');
+			strength.attr('data-utip', 'This room name is easy for an attacker to guess. Consider choosing something more complex.<br><br>A future update will enforce stronger, password-like room names.');
+		} else {
+			strength.css('background-color', 'green');
+			strength.css('background-image', 'url("img/icons/checkmark.svg")');
+			strength.attr('data-utip', 'This room name is hard for an attacker to guess.');
+		}
+	}
+	if ($('#conversationNameStrength:hover').length != 0) {
+		// Refresh utip text if mouse is currently over the element
+		strength.mouseenter();
+	}
+});
+
+
 $('#CryptodogLogin').submit(function() {
 	// Don't submit if form is already being processed.
 	if (($('#loginSubmit').attr('readonly') === 'readonly')) {
@@ -1283,11 +1317,12 @@ $('#CryptodogLogin').submit(function() {
 	$('#conversationName').val($.trim($('#conversationName').val().toLowerCase()));
 	$('#nickname').val($.trim($('#nickname').val()));
 
-	if ($('#conversationName').val() === '') {
+	const conversationName = $('#conversationName').val();
+	if (conversationName === '') {
 		Cryptodog.UI.loginFail(Cryptodog.locale['loginMessage']['enterConversation']);
 		$('#conversationName').select();
 	}
-	else if (!$('#conversationName').val().match(/^\w{1,1023}$/)) {
+	else if (!conversationName.match(/^\w{1,1023}$/)) {
 		Cryptodog.UI.loginFail(Cryptodog.locale['loginMessage']['conversationAlphanumeric']);
 		$('#conversationName').select();
 	}
@@ -1299,7 +1334,7 @@ $('#CryptodogLogin').submit(function() {
 	// Prepare keys and connect
 	else {
 		$('#loginSubmit,#conversationName,#nickname').attr('readonly', 'readonly');
-		Cryptodog.me.conversation = $('#conversationName').val();
+		Cryptodog.me.conversation = conversationName;
 		Cryptodog.me.nickname = $('#nickname').val();
 		
 		Cryptodog.xmpp.showKeyPreparationDialog(function () {
