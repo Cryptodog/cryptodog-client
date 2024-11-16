@@ -2,8 +2,8 @@
     "direction": "ltr",
     "fonts": "\"Helvetica Neue\", Helvetica, Arial, Verdana",
     "loginWindow": {
-        "introHeader": "Private conversations for everyone",
-        "introParagraph": "Welcome to Cryptodog. Here are some tips: <ul><li>Cryptodog is experimental software. Don't use Cryptodog if you have a critical need for secure messaging.</li><li>We recommend installing the <a href=\"https://chrome.google.com/webstore/detail/cryptodog/blnkmmamdbladdaaddkjbecbphngeiec\">Chrome extension</a> to ensure you always have the official, most recent version.</li><li>Want to meet new people? Try joining room <b><code>lobby</code></b>.</li><li>Bug reports and feature requests are welcome! Please open an issue on <a href=\"https://github.com/Cryptodog/cryptodog/issues\">GitHub</a>. If you find a security vulnerability, please email us at <a href=\"mailto:security@crypto.dog\">security@crypto.dog</a>.</li><li>Other questions or concerns? Email us at <a href=\"mailto:contact@crypto.dog\">contact@crypto.dog</a>.</li></ul>",
+        "introHeader": "Welcome to Cryptodog",
+        "introParagraph": "Here are some tips: <ul><li>Cryptodog is experimental software. Don't use Cryptodog if you have a critical need for secure messaging.</li><li>We recommend installing the <a href=\"https://chrome.google.com/webstore/detail/cryptodog/blnkmmamdbladdaaddkjbecbphngeiec\">Chrome extension</a> to ensure you always have the official, most recent version.</li><li>Choose a room name that others can't easily guess.</li><li>Want to meet new people? Try joining room <b><code>lobby</code></b>.</li><li>Bug reports and feature requests are welcome! Please open an issue on <a href=\"https://github.com/Cryptodog/cryptodog/issues\">GitHub</a>.</li><li>If you've found a security vulnerability, please email us at <a href=\"mailto:security@crypto.dog\">security@crypto.dog</a>.</li><li>For other questions and concerns, email us at <a href=\"mailto:contact@crypto.dog\">contact@crypto.dog</a>.</li></ul>",
         "blog": "Blog",
         "customServer": "Custom server",
         "reset": "Reset",
