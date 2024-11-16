@@ -235,7 +235,8 @@ Cryptodog.multiParty = function () { };
             Cryptodog.multiParty.ecdhWorker.postMessage({
                 theirName: sender,
                 theirPublicKey: publicKey,
-                ourPrivateKey: Cryptodog.me.mpPrivateKey
+                ourPrivateKey: Cryptodog.me.mpPrivateKey,
+                roomSecret: Cryptodog.me.roomSecret,
             });
             buddy.mpPublicKey = publicKey;
             buddy.mpFingerprint = Cryptodog.multiParty.genFingerprint(sender);

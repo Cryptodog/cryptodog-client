@@ -52,7 +52,7 @@ Cryptodog.keys = function () { };
 
         return {
             roomId,
-            roomSecret,
+            roomSecret: new Uint8Array(roomSecret)
         };
     };
 }());
