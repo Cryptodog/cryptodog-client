@@ -126,7 +126,7 @@ $(window).ready(function() {
                 );
                 Cryptodog.xmpp.onConnected();
 
-                document.title = Cryptodog.me.nickname + '@' + Cryptodog.me.conversation;
+                document.title = Cryptodog.me.nickname + '@' + Cryptodog.me.conversationReal;
                 $('.conversationName').text(document.title);
 
                 Cryptodog.storage.setItem('nickname', Cryptodog.me.nickname);

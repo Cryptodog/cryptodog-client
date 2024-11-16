@@ -4,7 +4,7 @@
 <head>
     <title>Cryptodog</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src *;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src *;">
     
     <meta name="referrer" content="no-referrer" />
     <link rel="stylesheet" media="screen" href="css/style.css" type="text/css" />
@@ -30,6 +30,7 @@
     <script type="application/javascript" src="js/lib/localforage.js"></script>
     <script type="application/javascript" src="js/lib/autolink.js"></script>
     <script type="application/javascript" src="js/cryptodog.js"></script>
+    <script type="application/javascript" src="js/etc/keys.js"></script>
     <script type="application/javascript" src="js/etc/ui.js"></script>
     <script type="application/javascript" src="js/etc/color.js"></script>
     <script type="application/javascript" src="js/etc/xmpp.js"></script>
@@ -43,6 +44,7 @@
     <script type="application/javascript" src="js/lib/bigint.mod.js"></script>
     <script type="application/javascript" src="js/lib/otr.js"></script>
     <script type="application/javascript" src="js/lib/elliptic.js"></script>
+    <script type="application/javascript" src="js/lib/argon2-bundled.min.js"></script>
     <script type="application/javascript" src="js/lib/zxcvbn.js"></script>
     <script type="application/javascript" src="js/etc/locale.js"></script>
 </head>

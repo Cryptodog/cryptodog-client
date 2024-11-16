@@ -9,18 +9,20 @@ GLOBAL VARIABLES
 Cryptodog.version = '2.5.9'
 
 Cryptodog.me = {
-	newMessages:   0,
-	windowFocus:   true,
-	composing:     false,
-	conversation:  null,
-	nickname:      null,
-	otrKey:        null,
-	fileKey:       null,
-	mpPrivateKey:  null,
-	mpPublicKey:   null,
-	mpFingerprint: null,
-	currentBuddy:  null,
-	color:         "#FFF" // overwritten on connect
+	newMessages:   		0,
+	windowFocus:   		true,
+	composing:     		false,
+	conversation:  		null, // the room id sent to the server, derived from room name
+	conversationReal: 	null, // the real, human-friendly room name
+	nickname:      		null,
+	roomSecret: 		null, // a secret shared among all room members, derived from room name
+	otrKey:        		null,
+	fileKey:       		null,
+	mpPrivateKey:  		null,
+	mpPublicKey:   		null,
+	mpFingerprint: 		null,
+	currentBuddy:  		null,
+	color:         		"#FFF" // overwritten on connect
 }
 
 Cryptodog.buddies = {}
@@ -191,7 +193,7 @@ Cryptodog.addToConversation = function(message, nickname, conversation, type) {
 			if (Cryptodog.allowSoundNotifications) {
 				Cryptodog.audio.newMessage.play();
 			}
-			desktopNotification(notifImg, Cryptodog.me.nickname + "@" + Cryptodog.me.conversation, nickname + ": " + message, 7);
+			desktopNotification(notifImg, Cryptodog.me.nickname + "@" + Cryptodog.me.conversationReal, nickname + ": " + message, 7);
 		}
 		message = Strophe.xmlescape(message);
 		message = Cryptodog.UI.addLinks(message);
@@ -965,7 +967,7 @@ var buddyNotification = function(nickname, join) {
 
 	desktopNotification(notifImg,
 		nickname + ' has ' + (join ? 'joined ' : 'left ')
-		+ Cryptodog.me.conversation, '', 7);
+		+ Cryptodog.me.conversationReal, '', 7);
 }
 
 // Send encrypted file.
@@ -1276,7 +1278,7 @@ $('#nickname').click(function() {
 })
 
 $('#conversationName').keyup(function (e) {
-	const conversationName = $.trim($('#conversationName').val().toLowerCase());
+	const conversationName = $.trim($('#conversationName').val());
 	const strength = $("#conversationNameStrength");
 
 	if (!conversationName) {
@@ -1314,32 +1316,30 @@ $('#CryptodogLogin').submit(function() {
 		return false;
 	}
 
-	$('#conversationName').val($.trim($('#conversationName').val().toLowerCase()));
+	$('#conversationName').val($.trim($('#conversationName').val()));
 	$('#nickname').val($.trim($('#nickname').val()));
 
 	const conversationName = $('#conversationName').val();
 	if (conversationName === '') {
 		Cryptodog.UI.loginFail(Cryptodog.locale['loginMessage']['enterConversation']);
 		$('#conversationName').select();
-	}
-	else if (!conversationName.match(/^\w{1,1023}$/)) {
-		Cryptodog.UI.loginFail(Cryptodog.locale['loginMessage']['conversationAlphanumeric']);
-		$('#conversationName').select();
-	}
-	else if ($('#nickname').val() === '') {
+	} else if ($('#nickname').val() === '') {
 		Cryptodog.UI.loginFail(Cryptodog.locale['loginMessage']['enterNickname']);
 		$('#nickname').select();
-	}
-
-	// Prepare keys and connect
-	else {
+	} else {
+		// Prepare keys and connect
 		$('#loginSubmit,#conversationName,#nickname').attr('readonly', 'readonly');
-		Cryptodog.me.conversation = conversationName;
+		Cryptodog.me.conversationReal = conversationName;
 		Cryptodog.me.nickname = $('#nickname').val();
-		
-		Cryptodog.xmpp.showKeyPreparationDialog(function () {
-			Cryptodog.me.color = Cryptodog.color.pop();
-			Cryptodog.xmpp.connect();
+
+		Cryptodog.keys.deriveFromRoomName(conversationName).then((keys) => {
+			Cryptodog.me.conversation = keys.roomId;
+			Cryptodog.me.roomSecret = keys.roomSecret;
+
+			Cryptodog.xmpp.showKeyPreparationDialog(function () {
+				Cryptodog.me.color = Cryptodog.color.pop();
+				Cryptodog.xmpp.connect();
+			});
 		});
 	}
 	return false;
