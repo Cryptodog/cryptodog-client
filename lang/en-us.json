@@ -3,15 +3,14 @@
     "fonts": "\"Helvetica Neue\", Helvetica, Arial, Verdana",
     "loginWindow": {
         "introHeader": "Welcome to Cryptodog",
-        "introParagraph": "Here are some tips: <ul><li>Cryptodog is experimental software. Don't use Cryptodog if you have a critical need for secure messaging.</li><li>We recommend installing the <a href=\"https://chrome.google.com/webstore/detail/cryptodog/blnkmmamdbladdaaddkjbecbphngeiec\">Chrome extension</a> to ensure you always have the official, most recent version.</li><li>Choose a room name that others can't easily guess.</li><li>Want to meet new people? Try joining room <b><code>lobby</code></b>.</li><li>Bug reports and feature requests are welcome! Please open an issue on <a href=\"https://github.com/Cryptodog/cryptodog/issues\">GitHub</a>.</li><li>If you've found a security vulnerability, please email us at <a href=\"mailto:security@crypto.dog\">security@crypto.dog</a>.</li><li>For other questions and concerns, email us at <a href=\"mailto:contact@crypto.dog\">contact@crypto.dog</a>.</li></ul>",
+        "introParagraph": "Cryptodog is experimental software that may have vulnerabilities. Please don't rely on it to protect your messages. Here are some tips on using it as safely as possible:<ul><li>Install the <a href=\"https://chrome.google.com/webstore/detail/cryptodog/blnkmmamdbladdaaddkjbecbphngeiec\">Chrome extension</a> to ensure you always have the official, most up-to-date version.</li><li>Treat the room name like a password—choose one that can't be easily guessed, and only share it with trusted people. Try clicking the dice icon to generate a random room name.</li><li>Nicknames are currently <b>not encrypted end-to-end</b>. For now, please don't use your real name or anything that personally identifies you.</li></ul>",
         "blog": "Blog",
         "customServer": "Custom server",
         "reset": "Reset",
-        "conversationName": "conversation name",
+        "conversationName": "room name",
         "nickname": "nickname",
         "connect": "connect",
-        "conversationNameTooltip": "Enter a name for your conversation and share it with people you'd like to talk to, or join <strong>lobby</strong> to meet new people!",
-        "enterConversation": "Enter the name of a conversation to join."
+        "conversationNameTooltip": "Choose a room name that's hard to guess, and share it with people you'd like to talk to. If you just want to meet new people, try joining <strong>lobby</strong>."
     },
     "loginMessage": {
         "enterConversation": "Please enter a conversation name.",
@@ -21,7 +20,6 @@
         "nicknameInUse": "Nickname in use.",
         "authenticationFailure": "Authentication failure.",
         "connectionFailed": "Connection failed.",
-        "thankYouUsing": "Thank you for using Cryptodog.",
         "registering": "Registering...",
         "connecting": "Connecting...",
         "connected": "Connected.",

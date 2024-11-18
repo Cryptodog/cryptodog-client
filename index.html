@@ -30,6 +30,7 @@
     <script type="application/javascript" src="js/lib/localforage.js"></script>
     <script type="application/javascript" src="js/lib/autolink.js"></script>
     <script type="application/javascript" src="js/cryptodog.js"></script>
+    <script type="application/javascript" src="js/etc/roomName.js"></script>
     <script type="application/javascript" src="js/etc/keys.js"></script>
     <script type="application/javascript" src="js/etc/ui.js"></script>
     <script type="application/javascript" src="js/etc/color.js"></script>
@@ -90,7 +91,8 @@
                     <!-- https://xmpp.org/rfcs/rfc6122.html#addressing-fundamentals -->
 
                     <input type="text" id="conversationName" maxlength="1023" autocomplete="off" dir="ltr" data-utip-gravity="ne" />
-                    <span id="conversationNameStrength" data-utip-gravity="ne" data-utip></span>
+                    <div id="randomRoomName" data-utip-gravity="n" data-utip="Generate a random room name"></div>
+                    <div id="conversationNameStrength" data-utip-gravity="se" data-utip></div>
                     <input type="text" id="nickname" maxlength="1023" autocomplete="off" dir="ltr" />
                     <input type="submit" id="loginSubmit" dir="ltr" />
                     <div id="loginInfo"></div>
@@ -102,6 +104,8 @@
             </div>
             <div id="footer">
                 <div id="version"></div>
+                <a id="website" target="_blank" href="https://crypto.dog">Website</a>
+                <a id="github" target="_blank" href="https://github.com/Cryptodog">GitHub</a>
                 <div id="loginOptions">
                     <a href="#" id="languageSelect"></a>
                     <a href="#" id="customServer"></a>

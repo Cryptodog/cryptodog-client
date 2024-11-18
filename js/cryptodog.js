@@ -1278,7 +1278,8 @@ $('#nickname').click(function() {
 })
 
 $('#conversationName').keyup(function (e) {
-	const conversationName = $.trim($('#conversationName').val());
+	$('#conversationName').val($('#conversationName').val().trimStart());
+	const conversationName = $('#conversationName').val();
 	const strength = $("#conversationNameStrength");
 
 	if (!conversationName) {
@@ -1286,20 +1287,25 @@ $('#conversationName').keyup(function (e) {
 		return;
 	}
 
+	const red = '#BD151C';
+	const orange = '#DE6F20';
 	if (conversationName === 'lobby') {
-		strength.css('background-color', 'red');
+		strength.css('background-color', red);
 		strength.css('background-image', 'url("img/icons/warning.svg")');
 		strength.attr('data-utip', 'This is a public room.');
 	} else {
 		const score = zxcvbn(conversationName).score;
 		strength.css('visibility', 'visible');
 		if (score < 4) {
-			strength.css('background-color', score < 3 ? 'red' : 'orange');
+			strength.css('background-color', score < 3 ? red : orange);
 			strength.css('background-image', 'url("img/icons/warning.svg")');
+			// slightly different alignment for the warning symbol
+			strength.css('background-position', 'center bottom 4.25px');
 			strength.attr('data-utip', 'This room name is easy for an attacker to guess. Consider choosing something more complex.<br><br>A future update will enforce stronger, password-like room names.');
 		} else {
 			strength.css('background-color', 'green');
 			strength.css('background-image', 'url("img/icons/checkmark.svg")');
+			strength.css('background-position', 'center');
 			strength.attr('data-utip', 'This room name is hard for an attacker to guess.');
 		}
 	}
@@ -1309,6 +1315,10 @@ $('#conversationName').keyup(function (e) {
 	}
 });
 
+$('#randomRoomName').click(function() {
+	$('#conversationName').val(Cryptodog.roomName.generate());
+	$('#conversationName').keyup();
+})
 
 $('#CryptodogLogin').submit(function() {
 	// Don't submit if form is already being processed.

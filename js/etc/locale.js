@@ -67,7 +67,6 @@
         $('#conversationName').attr('data-utip', languageObject['loginWindow']['conversationNameTooltip']);
         $('#nickname').attr('placeholder', languageObject['loginWindow']['nickname']);
         $('#loginSubmit').val(languageObject['loginWindow']['connect']);
-        $('#loginInfo').text(languageObject['loginWindow']['enterConversation']);
         $('#logout').attr('data-utip', languageObject['chatWindow']['logout']);
         $('#audio').attr('data-utip', languageObject['chatWindow']['audioNotificationsOff']);
         $('#notifications').attr('data-utip', languageObject['chatWindow']['desktopNotificationsOff']);

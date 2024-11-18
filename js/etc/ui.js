@@ -149,7 +149,7 @@ Cryptodog.UI = {
     logout: function() {
         document.title = 'Cryptodog';
 
-        $('#loginInfo').text(Cryptodog.locale['loginMessage']['thankYouUsing']);
+        $('#loginInfo').text('');
         $('#conversationInfo,#optionButtons').fadeOut();
         $('#header').animate({ 'background-color': 'transparent' });
         $('.logo').animate({ margin: '-5px 5px 0 5px' });
@@ -163,7 +163,7 @@ Cryptodog.UI = {
             $('#footer').animate({ height: 14 });
 
             $('#conversationWrapper').fadeOut(function() {
-                $('#info,#loginOptions,#version,#loginInfo').fadeIn();
+                $('#info,#loginOptions,#version,#loginInfo,#website,#github').fadeIn();
 
                 $('#login').fadeIn(200, function() {
                     $('#login').css({ opacity: 1 });

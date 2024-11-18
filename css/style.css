@@ -233,27 +233,20 @@ div#bubble #loginTabs [data-selected=true] {
 div#bubble .loginForm {
 	width: 500px;
 	height: 172px;
-	margin: 0 auto;
-	display: block;
+	margin: auto;
 	z-index: 1;
-	position: relative;
 }
 
 div#bubble .loginForm [type=text] {
-	margin: 9px 0;
-	border: none;
-	display: block;
-	padding: 7px;
+	padding: 5px;
 	text-align: center;
-	resize: none;
-	background: #999;
 }
 
 div#bubble .loginForm #conversationName {
+	font-size: 2em;
 	border-radius: 4px 0 0 0;
 	width: 450px;
-	font-size: 2.8em;
-	margin: 0 auto 10px auto;
+	margin: 0 auto 5px auto;
 	display: inline-block;
 	border: 0;
 	outline: 0;
@@ -263,18 +256,26 @@ div#bubble .loginForm #conversationName {
 
 div#bubble .loginForm #conversationNameStrength {
 	visibility: hidden;
-	display: inline-block;
-	width: 20px;
-	height: 20px;
+	width: 18px;
+	height: 18px;
 	background-size: 12px;
 	background-repeat: no-repeat;
-	background-position: center;
-	border-radius: 50%;
+	border-radius: 100%;
+}
+
+div#bubble .loginForm #randomRoomName {
+	display: inline-block;
+	cursor: pointer;
+	width: 20px;
+	height: 20px;
+	background-image: url('../img/icons/icons8-dice-90.png');
+	background-size: 16px;
+	background-repeat: no-repeat;
 }
 
 div#bubble .loginForm #nickname {
 	width: 300px;
-	font-size: 2em;
+	font-size: 1.8em;
 	margin: 0;
 	display: inline;
 	border: 0;
@@ -321,6 +322,10 @@ div#bubble div#info {
 	font-family: Verdana, Arial, Helvetica;
 }
 
+div#bubble div li {
+	margin: 5px 0;
+}
+
 div#bubble #info #introParagraph {
 	/*color: #333;*/
 	color: #e5e5e5;
@@ -352,9 +357,30 @@ div#footer a {
 div#footer #version {
 	font-size: 10px;
 	font-family: monospace;
-	color: #FFF;
 	float: left;
 	margin-left: 4px;
+}
+
+div#footer #website {
+	font-size: 10px;
+	padding-left: 16px;
+	background-image: url("../img/icons/icons8-link-64.png");
+	background-position: center left;
+	background-repeat: no-repeat;
+	background-size: 12px;
+	float: left;
+	margin-left: 16px;
+}
+
+div#footer #github {
+	font-size: 10px;
+	padding-left: 16px;
+	background-image: url("../img/icons/github-mark-white.svg");
+	background-position: center left;
+	background-repeat: no-repeat;
+	background-size: 12px;
+	float: left;
+	margin-left: 16px;
 }
 
 a#customServer {

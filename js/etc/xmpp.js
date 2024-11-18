@@ -163,7 +163,7 @@ $(window).ready(function() {
 
         window.setTimeout(function() {
             $('#loginOptions,#languages,#customServerDialog').fadeOut(200);
-            $('#version,#logoText,#loginInfo,#info').fadeOut(200);
+            $('#version,#logoText,#loginInfo,#info,#website,#github').fadeOut(200);
             $('#header').animate({ 'background-color': '#444' });
             $('.logo').animate({ margin: '-11px 5px 0 0' });
 
