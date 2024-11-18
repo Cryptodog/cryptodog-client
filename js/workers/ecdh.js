@@ -28,8 +28,7 @@ function genSharedSecret(theirPublicKey, ourPrivateKey, roomSecret) {
         )
     );
     // concat the room secret to the hashed DH output, and hash that to get the final shared secret
-    const mixed = sharedSecret.concat(toWordArray(roomSecret));
-    sharedSecret = CryptoJS.SHA512(mixed);
+    sharedSecret = CryptoJS.SHA512(sharedSecret.clone().concat(toWordArray(roomSecret)));
 
     return {
         message: sharedSecret.words.slice(0, 8),
