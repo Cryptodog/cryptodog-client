@@ -47,7 +47,7 @@ Cryptodog.keys = function () { };
             await hkdf(baseKeyImported, hkdfSalt, roomIdInfo, 128)
         );
 
-        // derive room secret (currently unused) from base key
+        // derive room secret from base key
         const roomSecret = await hkdf(baseKeyImported, hkdfSalt, roomSecretInfo, 256);
 
         return {
