@@ -3,7 +3,7 @@
     "fonts": "\"Helvetica Neue\", Helvetica, Arial, Verdana",
     "loginWindow": {
         "introHeader": "Welcome to Cryptodog",
-        "introParagraph": "Cryptodog is experimental software that may have vulnerabilities. Please don't rely on it to protect your messages. Here are some tips on using it as safely as possible:<ul><li>Install the <a href=\"https://chrome.google.com/webstore/detail/cryptodog/blnkmmamdbladdaaddkjbecbphngeiec\">Chrome extension</a> to ensure you always have the official, most up-to-date version.</li><li>Choose a room name that's hard to guess, and only share it with trusted people. Try clicking the dice icon to generate a random room name.</li><li>Nicknames are currently <b>not encrypted end-to-end</b>. For now, please don't use your real name or anything that personally identifies you.</li></ul>",
+        "introParagraph": "Cryptodog is experimental software that may have vulnerabilities. Don't use Cryptodog if you have a critical need for secure messaging. If you decide to use it, please follow these safety recommendations:<ul><li>Install the <a href=\"https://chrome.google.com/webstore/detail/cryptodog/blnkmmamdbladdaaddkjbecbphngeiec\">Chrome extension</a> to ensure you always have the official, most up-to-date version.</li><li>Choose a room name that's hard to guess, and only share it with trusted people. Try clicking the dice icon to generate a random room name.</li><li>Nicknames are currently <b>not encrypted end-to-end</b>. For now, please don't use your full name or anything that personally identifies you.</li></ul>",
         "blog": "Blog",
         "customServer": "Custom server",
         "reset": "Reset",

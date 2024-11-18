@@ -6,7 +6,7 @@ GLOBAL VARIABLES
 -------------------
 */
 
-Cryptodog.version = '2.5.9'
+Cryptodog.version = '2.6.0'
 
 Cryptodog.me = {
 	newMessages:   		0,
@@ -1301,7 +1301,7 @@ $('#conversationName').keyup(function (e) {
 			strength.css('background-image', 'url("img/icons/warning.svg")');
 			// slightly different alignment for the warning symbol
 			strength.css('background-position', 'center bottom 4.25px');
-			strength.attr('data-utip', 'This room name is easy for an attacker to guess. Consider choosing something more complex.<br><br>A future update will enforce stronger, password-like room names.');
+			strength.attr('data-utip', 'This room name is easy for an attacker to guess. Consider choosing something more complex.<br><br>A future update will require you to use a stronger, password-like room name.');
 		} else {
 			strength.css('background-color', 'green');
 			strength.css('background-image', 'url("img/icons/checkmark.svg")');

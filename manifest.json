@@ -1,7 +1,7 @@
 {
     "name": "Cryptodog",
     "description": "Private conversations made easy",
-    "version": "2.5.9",
+    "version": "2.6.0",
     "manifest_version": 3,
     "background": {
         "service_worker": "background/background.js",
