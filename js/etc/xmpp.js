@@ -53,7 +53,6 @@ $(window).ready(function() {
             }
 
             Cryptodog.me.mpPublicKey = Cryptodog.multiParty.genPublicKey(Cryptodog.me.mpPrivateKey);
-            Cryptodog.me.mpFingerprint = Cryptodog.multiParty.genFingerprint();
     
             // If we already have keys, just skip to the callback.
             if (Cryptodog.me.otrKey) {
@@ -227,7 +226,7 @@ $(window).ready(function() {
     };
 
     // Handle incoming messages from the XMPP server.
-    Cryptodog.xmpp.onMessage = function(message) {
+    Cryptodog.xmpp.onMessage = async function(message) {
         var nickname = extractNickname($(message).attr('from'));
 
         var body = $(message)
@@ -265,7 +264,7 @@ $(window).ready(function() {
             $('#buddy-' + Cryptodog.buddies[nickname].id).removeClass('composing');
 
             try {
-                body = Cryptodog.multiParty.receiveMessage(nickname, Cryptodog.me.nickname, body);
+                body = await Cryptodog.multiParty.receiveMessage(nickname, Cryptodog.me.nickname, body);
             } catch (e) {
                 console.warn('xmpp: exception handling multiParty message from ' + nickname + ': ' + e);
                 return true;

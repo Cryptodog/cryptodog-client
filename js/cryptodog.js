@@ -698,7 +698,6 @@ Cryptodog.displayInfo = function(nickname) {
 
 // Executes on user logout.
 Cryptodog.logout = function() {
-	Cryptodog.multiParty.initializeWorker();
 	Cryptodog.UI.logout();
 	Cryptodog.loginError = false;
 	Cryptodog.xmpp.connection.muc.leave(
