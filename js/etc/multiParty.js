@@ -33,6 +33,36 @@ Cryptodog.multiParty = function () { };
         Cryptodog.addToConversation(messageWarning, sender, 'groupChat', 'warning');
     };
 
+    Cryptodog.multiParty.encryptDirectMessage = function (recipient, message) {
+        const nonce = crypto.getRandomValues(new Uint8Array(nacl.secretbox.nonceLength));
+        const ct = nacl.secretbox(
+            nacl.util.decodeUTF8(message),
+            nonce,
+            Cryptodog.buddies[recipient].mpSecretKey
+        );
+
+        return JSON.stringify({
+            nonce: nacl.util.encodeBase64(nonce),
+            ct: nacl.util.encodeBase64(ct)
+        });
+    };
+
+    Cryptodog.multiParty.decryptDirectMessage = function (sender, message) {
+        const data = JSON.parse(message);
+        // TODO: validate data
+
+        const plaintext = nacl.secretbox.open(
+            nacl.util.decodeBase64(data.ct),
+            nacl.util.decodeBase64(data.nonce),
+            Cryptodog.buddies[sender].mpSecretKey
+        );
+        if (!plaintext) {
+            throw new Error(`failed to decrypt DM from ${sender}`);
+        }
+
+        return nacl.util.encodeUTF8(plaintext);
+    };
+
     Cryptodog.multiParty.sendMessage = function (message) {
         message = nacl.util.decodeUTF8(message);
 

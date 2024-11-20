@@ -1,6 +1,12 @@
 $(window).ready(function() {
     'use strict';
 
+    window.sodium = {
+        onload: function (sodium) {
+            Cryptodog.sodium = sodium;
+        }
+    };
+
     // Maximum encrypted file sharing size, in kilobytes.
     Cryptodog.otr.maximumFileSize = 5120;
 
@@ -41,7 +47,6 @@ $(window).ready(function() {
             to: data.to,
             position: 0,
             file: data.file,
-            key: data.key,
             total: Math.ceil(data.file.size / Cryptodog.otr.chunkSize),
             ctr: -1
         };
@@ -58,15 +63,29 @@ $(window).ready(function() {
                     return console.log(err);
                 }
 
-                Cryptodog.xmpp.connection.ibb.open(cn(data.to), sid, Cryptodog.otr.chunkSize, function(err) {
+                Cryptodog.xmpp.connection.ibb.open(cn(data.to), sid, Cryptodog.otr.chunkSize, function (err) {
                     if (err) {
                         return console.log(err);
                     }
                     Cryptodog.addToConversation(sid, Cryptodog.me.nickname, Cryptodog.buddies[data.to].id, 'file');
-                    Cryptodog.otr.sendFileData({
-                        start: true,
-                        to: data.to,
-                        sid: sid
+
+                    // Initialize sender secretstream
+                    const stream = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_init_push(
+                        // TODO: should we use a unique per-transfer key?
+                        Cryptodog.buddies[data.to].mpSecretKey
+                    );
+
+                    // Send header
+                    Cryptodog.xmpp.connection.ibb.data(cn(data.to), sid, 0, Cryptodog.sodium.to_base64(stream.header), function (err) {
+                        if (err) {
+                            return console.log(err);
+                        }
+                        Cryptodog.otr.sendFileData({
+                            seq: 1,
+                            to: data.to,
+                            sid: sid,
+                            state: stream.state
+                        });
                     });
                 });
             }
@@ -75,20 +94,9 @@ $(window).ready(function() {
 
     Cryptodog.otr.sendFileData = function(data) {
         var sid = data.sid;
-        var seq = data.start ? 0 : parseInt(data.seq, 10) + 1;
+        var seq = data.seq;
         if (seq > 65535) {
             seq = 0;
-        }
-
-        if (files[sid].position > files[sid].file.size) {
-            Cryptodog.xmpp.connection.ibb.close(cn(data.to), sid, function(err) {
-                if (err) {
-                    return console.log(err);
-                }
-            });
-
-            Cryptodog.updateFileProgressBar(sid, files[sid].ctr + 1, files[sid].file.size, data.to);
-            return;
         }
 
         // Split into chunk
@@ -103,54 +111,49 @@ $(window).ready(function() {
 
         var reader = new FileReader();
         reader.onload = function(event) {
-            var msg = event.target.result;
+            const chunkBytes = new Uint8Array(event.target.result);
 
-            // Remove dataURL header
-            msg = msg.split(',')[1];
-
-            // Encrypt
-            // don't use seq as a counter
-            // it repeats after 65535 above
-            var opts = {
-                mode: CryptoJS.mode.CTR,
-                iv: CryptoJS.enc.Latin1.parse(OTR.HLP.packCtr(files[sid].ctr)),
-                padding: CryptoJS.pad.NoPadding
-            };
-            var aesctr = CryptoJS.AES.encrypt(
-                CryptoJS.enc.Base64.parse(msg),
-                CryptoJS.enc.Latin1.parse(files[sid].key.encryptKey),
-                opts
+            let streamTag, cb;
+            if (files[sid].position > files[sid].file.size) {
+                // The final chunk
+                streamTag = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_TAG_FINAL;
+                cb = (data, sid, files) => {
+                    Cryptodog.xmpp.connection.ibb.close(cn(data.to), sid, function (err) {
+                        if (err) {
+                            return console.log(err);
+                        }
+                    });
+                    Cryptodog.updateFileProgressBar(sid, files[sid].ctr + 1, files[sid].file.size, data.to);
+                };
+            } else {
+                // An intermediate chunk
+                streamTag = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_TAG_MESSAGE;
+                cb = (data, sid) => {
+                    Cryptodog.otr.sendFileData({
+                        seq: seq + 1,
+                        to: data.to,
+                        sid: sid,
+                        state: data.state
+                    });
+                };
+            }
+            const encryptedChunk = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_push(
+                data.state,
+                chunkBytes,
+                null,
+                streamTag,
             );
-
-            msg = aesctr.toString();
-
-            // Then mac
-            var prefix = OTR.HLP.packBytes(files[sid].ctr, 8);
-            prefix += OTR.HLP.packBytes(files[sid].total, 8);
-
-            var mac = CryptoJS.HmacSHA512(
-                CryptoJS.enc.Base64.parse(prefix + msg),
-                CryptoJS.enc.Latin1.parse(files[sid].key.macKey)
-            );
-
-            // Combine ciphertext and mac, then transfer chunk
-            msg += mac.toString(CryptoJS.enc.Base64);
-
-            Cryptodog.xmpp.connection.ibb.data(cn(data.to), sid, seq, msg, function(err) {
+            Cryptodog.xmpp.connection.ibb.data(cn(data.to), sid, seq,
+                Cryptodog.sodium.to_base64(encryptedChunk), function(err) {
                 if (err) {
                     return console.log(err);
                 }
-
-                Cryptodog.otr.sendFileData({
-                    seq: seq,
-                    to: data.to,
-                    sid: sid
-                });
+                cb(data, sid, files);
             });
 
             Cryptodog.updateFileProgressBar(sid, files[sid].ctr + 1, files[sid].file.size, data.to);
         };
-        reader.readAsDataURL(chunk);
+        reader.readAsArrayBuffer(chunk);
     };
 
     Cryptodog.otr.ibbHandler = function(type, from, sid, data, seq) {
@@ -158,9 +161,6 @@ $(window).ready(function() {
 
         switch (type) {
             case 'open':
-                var file = rcvFile[from][sid].filename;
-                rcvFile[from][sid].key = Cryptodog.buddies[nick].fileKey[file];
-
                 // Latest version of Strophe.js (2017-09-30) uses this UID format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
                 // https://github.com/strophe/strophejs/blob/ea459e987cc166b33a33efa99cac9b02beb12a98/strophe.js#L2916
                 // But doing this match at all seems unnecessary.
@@ -168,8 +168,6 @@ $(window).ready(function() {
                 if (sid.match(/^\w{8}-\w{4}-4\w{3}-\w{4}-\w{12}$/) && rcvFile[from][sid].mime.match(fileMIME)) {
                     Cryptodog.addToConversation(sid, nick, Cryptodog.buddies[nick].id, 'file');
                 }
-
-                delete Cryptodog.buddies[nick].fileKey[file];
                 break;
             case 'data':
                 if (rcvFile[from][sid].abort) {
@@ -184,72 +182,37 @@ $(window).ready(function() {
 
                 rcvFile[from][sid].seq = seq;
 
-                var key = rcvFile[from][sid].key;
-                var ss = data.length - 88;
-                var msg = data.substring(0, ss);
-                var mac = data.substring(ss);
-
-                var prefix = OTR.HLP.packBytes(rcvFile[from][sid].ctr, 8);
-                prefix += OTR.HLP.packBytes(rcvFile[from][sid].total, 8);
-
-                var cmac = CryptoJS.HmacSHA512(
-                    CryptoJS.enc.Base64.parse(prefix + msg),
-                    CryptoJS.enc.Latin1.parse(key.macKey)
-                );
-
-                if (!OTR.HLP.compare(mac, cmac.toString(CryptoJS.enc.Base64))) {
-                    rcvFile[from][sid].abort = true;
-                    Cryptodog.UI.fileTransferError(sid, nick);
-                    console.log('OTR file transfer: MACs do not match.');
+                if (!rcvFile[from][sid].state) {
+                    // No secretstream established yet; this message should be the header
+                    const header = Cryptodog.sodium.from_base64(data);
+                    const state = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_init_pull(
+                        header, Cryptodog.buddies[nick].mpSecretKey
+                    );
+                    if (!state) {
+                        rcvFile[from][sid].abort = true;
+                        Cryptodog.UI.fileTransferError(sid, nick);
+                        return;
+                    }
+                    rcvFile[from][sid].state = state;
                     return;
                 }
 
-                var opts = {
-                    mode: CryptoJS.mode.CTR,
-                    iv: CryptoJS.enc.Latin1.parse(OTR.HLP.packCtr(rcvFile[from][sid].ctr)),
-                    padding: CryptoJS.pad.NoPadding
-                };
+                // We have a secretstream; try to decrypt this chunk
+                const r = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_pull(rcvFile[from][sid].state,
+                    Cryptodog.sodium.from_base64(data));
+                if (!r) {
+                    // TODO: decide how to present these errors to the user
+                    throw new Error(`failed to decrypt file chunk from ${nick}`);
+                }
 
-                msg = CryptoJS.AES.decrypt(msg, CryptoJS.enc.Latin1.parse(key.encryptKey), opts);
-
-                rcvFile[from][sid].data += msg.toString(CryptoJS.enc.Latin1);
+                rcvFile[from][sid].data = [...rcvFile[from][sid].data, ...r.message];
                 rcvFile[from][sid].ctr += 1;
-
                 Cryptodog.updateFileProgressBar(sid, rcvFile[from][sid].ctr, rcvFile[from][sid].size, nick);
                 break;
             case 'close':
                 if (!rcvFile[from][sid].abort && rcvFile[from][sid].total === rcvFile[from][sid].ctr) {
-                    var url;
-                    if (
-                        navigator.userAgent === 'Chrome (Mac app)' ||
-                        (navigator.userAgent.match('Safari') && !navigator.userAgent.match('Chrome'))
-                    ) {
-                        // Safari older than 6.0.5 can only support 128kb
-                        if (
-                            navigator.userAgent !== 'Chrome (Mac app)' &&
-                            !matchSafariVersion([6, 0, 5]) &&
-                            rcvFile[from][sid].size >= 131072
-                        ) {
-                            Cryptodog.UI.fileTransferError(sid, nick);
-                            console.log('File size is too large for this version of Safari');
-                            delete rcvFile[from][sid];
-                            return;
-                        }
-
-                        url =
-                            'data:application/octet-stream;base64,' +
-                            CryptoJS.enc.Latin1.parse(rcvFile[from][sid].data).toString(CryptoJS.enc.Base64);
-                    } else {
-                        // Convert data to blob
-                        var ia = new Uint8Array(rcvFile[from][sid].data.length);
-
-                        for (var i = 0; i < rcvFile[from][sid].data.length; i++) {
-                            ia[i] = rcvFile[from][sid].data.charCodeAt(i);
-                        }
-
-                        var blob = new Blob([ia], { type: rcvFile[from][sid].mime });
-                        url = window.URL.createObjectURL(blob);
-                    }
+                    var blob = new Blob([new Uint8Array(rcvFile[from][sid].data)], { type: rcvFile[from][sid].mime });
+                    const url = window.URL.createObjectURL(blob);
 
                     if (rcvFile[from][sid].filename.match(/^[\w.\-]+$/) && rcvFile[from][sid].mime.match(fileMIME)) {
                         Cryptodog.addFile(url, sid, nick, rcvFile[from][sid].filename);
@@ -279,35 +242,8 @@ $(window).ready(function() {
             ctr: 0,
             total: Math.ceil(size / Cryptodog.otr.chunkSize),
             abort: false,
-            data: ''
+            data: new Uint8Array(),
+            state: null
         };
     };
-
-    // make sure current Safari is at least <version>
-    function matchSafariVersion(version) {
-        var match = navigator.userAgent.match(/\bversion\/(\d+)\.(\d+)\.(\d+)/i);
-        if (match == null) {
-            return false;
-        }
-
-        match = match.slice(1).map(function(i) {
-            return parseInt(i, 10);
-        });
-
-        function ver(arr, pos) {
-            if (arr[pos] > version[pos]) {
-                return true;
-            }
-
-            if (arr[pos] === version[pos]) {
-                pos += 1;
-                if (pos === version.length) {
-                    return true;
-                }
-                return ver(arr, pos);
-            }
-            return false;
-        }
-        return ver(match, 0);
-    }
 });

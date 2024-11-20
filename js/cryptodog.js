@@ -987,14 +987,11 @@ var sendFile = function(nickname) {
 				var filename = Cryptodog.random.encodedBytes(16, CryptoJS.enc.Hex)
 				filename += file.name.match(/\.(\w)+$/)[0]
 				Cryptodog.buddies[nickname].otr.sendFile(filename)
-				var key = Cryptodog.buddies[nickname].fileKey[filename]
 				Cryptodog.otr.beginSendFile({
 					file: file,
 					filename: filename,
 					to: nickname,
-					key: key
 				});
-				delete Cryptodog.buddies[nickname].fileKey[filename];
 			}
 		})
 		$('#fileSelectButton').click(function() {
@@ -1019,9 +1016,7 @@ var ensureOTRdialog = function(nickname, close, cb, noAnimation) {
 		$('#fill').animate({'width': '100%', 'opacity': '1'}, 10000, 'linear')
 	}
 
-	// add some state for status callback
-	buddy.genFingerState = { close: close, cb: cb, noAnimation: noAnimation}
-	buddy.otr.sendQueryMsg()
+	cb();
 }
 
 
@@ -1157,9 +1152,17 @@ $('#userInput').submit(function() {
 	$('#userInputText').val('')
 	if (!message.length) { return false }
 	if (Cryptodog.me.currentBuddy !== 'groupChat') {
-		Cryptodog.buddies[
-			Cryptodog.getBuddyNicknameByID(Cryptodog.me.currentBuddy)
-		].otr.sendMsg(message);
+		const recipient = Cryptodog.getBuddyNicknameByID(Cryptodog.me.currentBuddy);
+		const dm = Cryptodog.multiParty.encryptDirectMessage(recipient, message);
+
+		Cryptodog.xmpp.connection.muc.message(
+			Cryptodog.me.conversation + '@' + Cryptodog.xmpp.currentServer.conference,
+			recipient,
+			dm,
+			null,
+			'chat',
+			'active'
+		);
 	}
 	else if (Object.keys(Cryptodog.buddies).length) {
 		var ciphertext = JSON.parse(Cryptodog.multiParty.sendMessage(message));

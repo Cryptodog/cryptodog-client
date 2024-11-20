@@ -282,10 +282,17 @@ $(window).ready(function() {
                 return true;
             }
 
+            let dm;
             try {
-                Cryptodog.buddies[nickname].otr.receiveMsg(body);
+                dm = Cryptodog.multiParty.decryptDirectMessage(nickname, body);
             } catch (e) {
-                console.warn('xmpp: exception handling OTR message from ' + nickname + ': ' + e);
+                console.log(`xmpp: exception handling direct message from ${nickname}: ${e}`);
+                return true;
+            }
+
+            Cryptodog.addToConversation(dm, nickname, Cryptodog.buddies[nickname].id, 'message');
+            if (Cryptodog.me.currentBuddy !== Cryptodog.buddies[nickname].id && !Cryptodog.buddies[nickname].ignored()) {
+                Cryptodog.messagePreview(dm, nickname);
             }
         }
         return true;
