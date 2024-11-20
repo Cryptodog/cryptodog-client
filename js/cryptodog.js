@@ -306,7 +306,6 @@ var Buddy = function(nickname, id, status) {
 	this.nickname       = nickname
 	this.genFingerState = null
 	this.status         = status
-	this.otr            = Cryptodog.otr.add(nickname)
 	this.color          = Cryptodog.color.pop();
 	
 	// Regularly reset at the interval defined by Cryptodog.maxMessageInterval
@@ -986,7 +985,6 @@ var sendFile = function(nickname) {
 				var file = this.files[0]
 				var filename = Cryptodog.random.encodedBytes(16, CryptoJS.enc.Hex)
 				filename += file.name.match(/\.(\w)+$/)[0]
-				Cryptodog.buddies[nickname].otr.sendFile(filename)
 				Cryptodog.otr.beginSendFile({
 					file: file,
 					filename: filename,

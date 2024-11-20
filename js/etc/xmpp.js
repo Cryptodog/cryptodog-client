@@ -42,64 +42,12 @@ $(window).ready(function() {
 
     // Prepares necessary encryption key operations before XMPP connection.
     // Shows a progress bar while doing so.
-    Cryptodog.xmpp.showKeyPreparationDialog = function(callback) {
-        Cryptodog.storage.getItem('persistenceEnabled', function(key) {
-            var key = key || {};    
-            if (key.enabled) {
-                Cryptodog.me.mpPrivateKey = BigInt.base642bigInt(key.mp);
-                Cryptodog.me.otrKey = DSA.parsePrivate(key.otr);
-            } else {
-                Cryptodog.me.mpPrivateKey = Cryptodog.multiParty.genPrivateKey();
-            }
-
-            Cryptodog.me.mpPublicKey = Cryptodog.multiParty.genPublicKey(Cryptodog.me.mpPrivateKey);
-    
-            // If we already have keys, just skip to the callback.
-            if (Cryptodog.me.otrKey) {
-                callback();
-                return;
-            }
-
-            $('#loginInfo').text(Cryptodog.locale['loginMessage']['generatingKeys']);
-
-            // Add delay to key generation when on the file protocol
-            // Since the UI freezes when generating keys without WebWorkers
-            if (window.location.protocol === 'file:') {
-                setTimeout(function() {
-                    Cryptodog.xmpp.prepareKeys(callback);
-                }, 100);
-            } else {
-                Cryptodog.xmpp.prepareKeys(callback);
-            }
-        });
-    };
-
-    // See above.
-    Cryptodog.xmpp.prepareKeys = function(callback) {
-        // Create DSA key for OTR.
-        // file protocol doesn't support WebWorkers
-        if (window.location.protocol === 'file:') {
-            Cryptodog.me.otrKey = new DSA();
-
-            if (callback) {
-                callback();
-            }
-        } else {
-            DSA.createInWebWorker(
-                {
-                    path: 'js/workers/dsa.js',
-                    seed: Cryptodog.random.generateSeed
-                },
-                function(key) {
-                    Cryptodog.me.otrKey = key;
-
-                    if (callback) {
-                        callback();
-                    }
-                }
-            );
-        }
-    };
+    Cryptodog.xmpp.showKeyPreparationDialog = function (callback) {
+        Cryptodog.me.mpPrivateKey = Cryptodog.multiParty.genPrivateKey();
+        Cryptodog.me.mpPublicKey = Cryptodog.multiParty.genPublicKey(Cryptodog.me.mpPrivateKey);
+        $('#loginInfo').text(Cryptodog.locale['loginMessage']['generatingKeys']);
+        callback();
+    }
 
     // Connect anonymously and join conversation.
     Cryptodog.xmpp.connect = function() {
