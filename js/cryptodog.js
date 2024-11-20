@@ -70,8 +70,6 @@ INTIALIZATION
 
 Cryptodog.UI.setVersion(Cryptodog.version);
 
-// Seed RNG.
-Cryptodog.random.setSeed(Cryptodog.random.generateSeed());
 
 var conversationBuffers = {};
 
