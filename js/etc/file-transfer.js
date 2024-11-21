@@ -1,4 +1,4 @@
-$(window).ready(function() {
+Cryptodog.fileTransfer = function () {
     'use strict';
 
     window.sodium = {
@@ -8,36 +8,33 @@ $(window).ready(function() {
     };
 
     // Maximum encrypted file sharing size, in kilobytes.
-    Cryptodog.otr.maximumFileSize = 5120;
+    const maximumFileSize = 5120;
 
     // Size in which file chunks are split, in bytes.
-    Cryptodog.otr.chunkSize = 64511;
-
-    // Safari compatibility
-    window.URL = window.URL || window.webkitURL;
+    const chunkSize = 64511;
 
     var files = {};
     var rcvFile = {};
     var fileMIME = new RegExp(
         '^(image/(png|jpeg|gif))|(application/((x-compressed)|(x-zip-compressed)|(zip)' +
-            '|(x-zip)|(octet-stream)|(x-compress)))|(multipart/x-zip)$'
+        '|(x-zip)|(octet-stream)|(x-compress)))|(multipart/x-zip)$'
     );
 
-    var cn = function(to) {
+    var cn = function (to) {
         return Cryptodog.me.conversation + '@' + Cryptodog.xmpp.currentServer.conference + '/' + to;
     };
 
-    Cryptodog.otr.beginSendFile = function(data) {
+    function beginSendFile(data) {
         if (!data.file.type.match(fileMIME)) {
             $('#fileInfoField').text(Cryptodog.locale['chatWindow']['fileTypeError']);
             return;
-        } else if (data.file.size > Cryptodog.otr.maximumFileSize * 1024) {
+        } else if (data.file.size > Cryptodog.fileTransfer.maximumFileSize * 1024) {
             $('#fileInfoField').text(
-                Cryptodog.locale['chatWindow']['fileSizeError'].replace('(SIZE)', Cryptodog.otr.maximumFileSize / 1024)
+                Cryptodog.locale['chatWindow']['fileSizeError'].replace('(SIZE)', Cryptodog.fileTransfer.maximumFileSize / 1024)
             );
             return;
         } else {
-            window.setTimeout(function() {
+            window.setTimeout(function () {
                 $('#dialogBoxClose').click();
             }, 500);
         }
@@ -47,7 +44,7 @@ $(window).ready(function() {
             to: data.to,
             position: 0,
             file: data.file,
-            total: Math.ceil(data.file.size / Cryptodog.otr.chunkSize),
+            total: Math.ceil(data.file.size / Cryptodog.fileTransfer.chunkSize),
             ctr: -1
         };
 
@@ -58,12 +55,12 @@ $(window).ready(function() {
             data.file.size,
             data.file.type,
 
-            function(err) {
+            function (err) {
                 if (err) {
                     return console.log(err);
                 }
 
-                Cryptodog.xmpp.connection.ibb.open(cn(data.to), sid, Cryptodog.otr.chunkSize, function (err) {
+                Cryptodog.xmpp.connection.ibb.open(cn(data.to), sid, Cryptodog.fileTransfer.chunkSize, function (err) {
                     if (err) {
                         return console.log(err);
                     }
@@ -80,7 +77,7 @@ $(window).ready(function() {
                         if (err) {
                             return console.log(err);
                         }
-                        Cryptodog.otr.sendFileData({
+                        sendFileData({
                             seq: 1,
                             to: data.to,
                             sid: sid,
@@ -92,7 +89,7 @@ $(window).ready(function() {
         );
     };
 
-    Cryptodog.otr.sendFileData = function(data) {
+    function sendFileData(data) {
         var sid = data.sid;
         var seq = data.seq;
         if (seq > 65535) {
@@ -100,7 +97,7 @@ $(window).ready(function() {
         }
 
         // Split into chunk
-        var end = files[sid].position + Cryptodog.otr.chunkSize;
+        var end = files[sid].position + Cryptodog.fileTransfer.chunkSize;
 
         // Check for slice function on file
         var sliceStr = files[sid].file.slice ? 'slice' : 'webkitSlice';
@@ -110,7 +107,7 @@ $(window).ready(function() {
         files[sid].ctr += 1;
 
         var reader = new FileReader();
-        reader.onload = function(event) {
+        reader.onload = function (event) {
             const chunkBytes = new Uint8Array(event.target.result);
 
             let streamTag, cb;
@@ -129,7 +126,7 @@ $(window).ready(function() {
                 // An intermediate chunk
                 streamTag = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_TAG_MESSAGE;
                 cb = (data, sid) => {
-                    Cryptodog.otr.sendFileData({
+                    sendFileData({
                         seq: seq + 1,
                         to: data.to,
                         sid: sid,
@@ -144,19 +141,19 @@ $(window).ready(function() {
                 streamTag,
             );
             Cryptodog.xmpp.connection.ibb.data(cn(data.to), sid, seq,
-                Cryptodog.sodium.to_base64(encryptedChunk), function(err) {
-                if (err) {
-                    return console.log(err);
-                }
-                cb(data, sid, files);
-            });
+                Cryptodog.sodium.to_base64(encryptedChunk), function (err) {
+                    if (err) {
+                        return console.log(err);
+                    }
+                    cb(data, sid, files);
+                });
 
             Cryptodog.updateFileProgressBar(sid, files[sid].ctr + 1, files[sid].file.size, data.to);
         };
         reader.readAsArrayBuffer(chunk);
     };
 
-    Cryptodog.otr.ibbHandler = function(type, from, sid, data, seq) {
+    function ibbHandler(type, from, sid, data, seq) {
         var nick = from.split('/')[1];
 
         switch (type) {
@@ -229,7 +226,7 @@ $(window).ready(function() {
         }
     };
 
-    Cryptodog.otr.fileHandler = function(from, sid, filename, size, mime) {
+    function fileHandler(from, sid, filename, size, mime) {
         if (!rcvFile[from]) {
             rcvFile[from] = {};
         }
@@ -240,10 +237,18 @@ $(window).ready(function() {
             mime: mime,
             seq: 0,
             ctr: 0,
-            total: Math.ceil(size / Cryptodog.otr.chunkSize),
+            total: Math.ceil(size / Cryptodog.fileTransfer.chunkSize),
             abort: false,
             data: new Uint8Array(),
             state: null
         };
     };
-});
+
+    return {
+        maximumFileSize,
+        chunkSize,
+        beginSendFile,
+        ibbHandler,
+        fileHandler
+    }
+}();

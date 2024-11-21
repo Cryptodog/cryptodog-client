@@ -125,7 +125,7 @@ Cryptodog.storage.getItem('smpAllowedList', function(v) {
 // Update a file transfer progress bar.
 Cryptodog.updateFileProgressBar = function(file, chunk, size, recipient) {
 	var conversationBuffer = $(conversationBuffers[Cryptodog.buddies[recipient].id]);
-	var progress = (chunk * 100) / (Math.ceil(size / Cryptodog.otr.chunkSize));
+	var progress = (chunk * 100) / (Math.ceil(size / Cryptodog.fileTransfer.chunkSize));
 	if (progress > 100) { progress = 100 }
 	$('.fileProgressBarFill')
 		.filterByData('file', file)
@@ -970,7 +970,7 @@ var buddyNotification = function(nickname, join) {
 var sendFile = function(nickname) {
 	var sendFileDialog = Mustache.render(Cryptodog.templates.sendFile, {
 		sendEncryptedFile: Cryptodog.locale['chatWindow']['sendEncryptedFile'],
-		fileTransferInfo: Cryptodog.locale['chatWindow']['fileTransferInfo'].replace('(SIZE)', Cryptodog.otr.maximumFileSize / 1024)
+		fileTransferInfo: Cryptodog.locale['chatWindow']['fileTransferInfo'].replace('(SIZE)', Cryptodog.fileTransfer.maximumFileSize / 1024)
 	});
 	ensureOTRdialog(nickname, false, function() {
 		Cryptodog.UI.dialogBox(sendFileDialog, {
@@ -983,7 +983,7 @@ var sendFile = function(nickname) {
 				var file = this.files[0]
 				var filename = crypto.randomUUID();
 				filename += file.name.match(/\.(\w)+$/)[0]
-				Cryptodog.otr.beginSendFile({
+				Cryptodog.fileTransfer.beginSendFile({
 					file: file,
 					filename: filename,
 					to: nickname,

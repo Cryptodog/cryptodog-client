@@ -225,7 +225,7 @@ $(window).ready(function() {
             // Check if this is a private OTR message.
             $('#buddy-' + Cryptodog.buddies[nickname].id).removeClass('composing');
 
-            if (body.length > Cryptodog.otr.maxMessageLength) {
+            if (body.length > Cryptodog.fileTransfer.maxMessageLength) {
                 console.log('xmpp: refusing to decrypt large OTR message (' + body.length + ' bytes) from ' + nickname);
                 return true;
             }
@@ -363,8 +363,8 @@ $(window).ready(function() {
             return true;
         });
 
-        Cryptodog.xmpp.connection.ibb.addIBBHandler(Cryptodog.otr.ibbHandler);
-        Cryptodog.xmpp.connection.si_filetransfer.addFileHandler(Cryptodog.otr.fileHandler);
+        Cryptodog.xmpp.connection.ibb.addIBBHandler(Cryptodog.fileTransfer.ibbHandler);
+        Cryptodog.xmpp.connection.si_filetransfer.addFileHandler(Cryptodog.fileTransfer.fileHandler);
 
         $('.conversationName').animate({ 'background-color': '#bb7a20' });
 
