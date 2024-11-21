@@ -6,8 +6,7 @@ Cryptodog.keys = function () {
     const roomSecretInfo = 'cryptodog room secret';
 
     function newPrivateKey() {
-        const privateKeyLen = 32;
-        return crypto.getRandomValues(new Uint8Array(privateKeyLen));
+        return nacl.randomBytes(nacl.scalarMult.scalarLength);
     }
 
     function publicKeyFromPrivate(privateKey) {
