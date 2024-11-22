@@ -47,7 +47,7 @@ Cryptodog.multiParty = function () { };
         const ct = nacl.secretbox(
             nacl.util.decodeUTF8(message),
             nonce,
-            Cryptodog.buddies[recipient].mpSecretKey
+            Cryptodog.buddies[recipient].peerKey
         );
 
         return JSON.stringify({
@@ -66,7 +66,7 @@ Cryptodog.multiParty = function () { };
         }
         markNonceUsed(nonce);
 
-        const plaintext = nacl.secretbox.open(ct, nonce, Cryptodog.buddies[sender].mpSecretKey);
+        const plaintext = nacl.secretbox.open(ct, nonce, Cryptodog.buddies[sender].peerKey);
         if (!plaintext) {
             throw new Error(`failed to decrypt DM from ${sender}`);
         }
@@ -84,7 +84,7 @@ Cryptodog.multiParty = function () { };
 
         var sortedRecipients = [];
         for (var b in Cryptodog.buddies) {
-            if (Cryptodog.buddies[b].mpSecretKey) {
+            if (Cryptodog.buddies[b].peerKey) {
                 sortedRecipients.push(b);
             }
         }
@@ -97,7 +97,7 @@ Cryptodog.multiParty = function () { };
             encrypted['text'][sortedRecipients[i]]['message'] = nacl.util.encodeBase64(
                 nacl.secretbox(message,
                     nonce,
-                    Cryptodog.buddies[sortedRecipients[i]].mpSecretKey
+                    Cryptodog.buddies[sortedRecipients[i]].peerKey
                 )
             );
             encrypted['text'][sortedRecipients[i]]['nonce'] = nacl.util.encodeBase64(nonce);
@@ -138,7 +138,7 @@ Cryptodog.multiParty = function () { };
             }
 
             // TODO: check whether this needs to be put back into a worker
-            buddy.mpSecretKey = await Cryptodog.keys.getPairwiseKey(Cryptodog.me.mpPrivateKey, publicKey, Cryptodog.me.nickname, sender, Cryptodog.me.roomSecret);
+            buddy.peerKey = await Cryptodog.keys.derivePeerKey(Cryptodog.me.mpPrivateKey, publicKey, Cryptodog.me.roomSecret);
             buddy.mpPublicKey = publicKey;
 
             // TODO: set fingerprint/safety number for buddy
@@ -158,7 +158,7 @@ Cryptodog.multiParty = function () { };
                 Cryptodog.multiParty.messageWarning(sender);
                 return false;
             } else {
-                if (!(buddy.mpSecretKey)) {
+                if (!(buddy.peerKey)) {
                     // We don't have the sender's key - they're "borked".
                     // Request their key and warn the user.
                     console.log('Requesting public key from ' + sender);
@@ -204,7 +204,7 @@ Cryptodog.multiParty = function () { };
                 markNonceUsed(nonce);
 
                 // TODO: verify 1) that no recipient's ciphertext was tampered with and 2) that everyone received the same plaintext
-                const plaintext = nacl.secretbox.open(box, nonce, buddy.mpSecretKey);
+                const plaintext = nacl.secretbox.open(box, nonce, buddy.peerKey);
                 if (!plaintext) {
                     Cryptodog.multiParty.messageWarning(sender);
                     console.log(`multiParty: failed to decrypt message from ${sender}`);

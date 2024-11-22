@@ -4,6 +4,7 @@ Cryptodog.keys = function () {
     const hkdfSalt = new Uint8Array(16);
     const roomIdInfo = 'cryptodog room id';
     const roomSecretInfo = 'cryptodog room secret';
+    const peerKeyInfo = 'peer key';
 
     function newPrivateKey() {
         return nacl.randomBytes(nacl.scalarMult.scalarLength);
@@ -13,18 +14,17 @@ Cryptodog.keys = function () {
         return nacl.scalarMult.base(privateKey);
     }
 
-    async function getPairwiseKey(myPrivateKey, theirPublicKey, myId, theirId, roomSecret) {
-        const pairwiseKeyBits = 8 * nacl.secretbox.keyLength;
+    async function derivePeerKey(myPrivateKey, theirPublicKey, roomSecret) {
+        const peerKeyBits = 8 * nacl.secretbox.keyLength;
 
         const hkdfInput = new Uint8Array([...nacl.scalarMult(myPrivateKey, theirPublicKey), ...roomSecret]);
         const hdfkInputImported = await importForHkdf(hkdfInput);
 
-        const sortedIds = [myId, theirId].sort().join();
         return new Uint8Array(
             await hkdf(hdfkInputImported,
                 hkdfSalt,
-                `pairwise key for ${sortedIds}`,
-                pairwiseKeyBits
+                peerKeyInfo,
+                peerKeyBits
             )
         );
     }
@@ -97,7 +97,7 @@ Cryptodog.keys = function () {
     return {
         newPrivateKey,
         publicKeyFromPrivate,
-        getPairwiseKey,
+        derivePeerKey,
         deriveFromRoomName
     };
 }();

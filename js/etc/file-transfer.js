@@ -69,7 +69,7 @@ Cryptodog.fileTransfer = function () {
                     // Initialize sender secretstream
                     const stream = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_init_push(
                         // TODO: should we use a unique per-transfer key?
-                        Cryptodog.buddies[data.to].mpSecretKey
+                        Cryptodog.buddies[data.to].peerKey
                     );
 
                     // Send header
@@ -183,7 +183,7 @@ Cryptodog.fileTransfer = function () {
                     // No secretstream established yet; this message should be the header
                     const header = Cryptodog.sodium.from_base64(data);
                     const state = Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_init_pull(
-                        header, Cryptodog.buddies[nick].mpSecretKey
+                        header, Cryptodog.buddies[nick].peerKey
                     );
                     if (!state) {
                         rcvFile[from][sid].abort = true;
