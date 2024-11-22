@@ -5,6 +5,14 @@ Cryptodog.multiParty = function () { };
 
     Cryptodog.multiParty.maxMessageLength = 5000;
 
+    const usedNonces = new Set();
+    function markNonceUsed(nonce) {
+        usedNonces.add(nacl.util.encodeBase64(nonce));
+    }
+    function nonceIsUsed(nonce) {
+        return usedNonces.has(nacl.util.encodeBase64(nonce));
+    }
+
     Cryptodog.multiParty.genPrivateKey = function () {
         return Cryptodog.keys.newPrivateKey();
     };
@@ -35,6 +43,7 @@ Cryptodog.multiParty = function () { };
 
     Cryptodog.multiParty.encryptDirectMessage = function (recipient, message) {
         const nonce = crypto.getRandomValues(new Uint8Array(nacl.secretbox.nonceLength));
+        markNonceUsed(nonce);
         const ct = nacl.secretbox(
             nacl.util.decodeUTF8(message),
             nonce,
@@ -48,14 +57,16 @@ Cryptodog.multiParty = function () { };
     };
 
     Cryptodog.multiParty.decryptDirectMessage = function (sender, message) {
-        const data = JSON.parse(message);
-        // TODO: validate data
+        let { ct, nonce } = JSON.parse(message);
+        ct = nacl.util.decodeBase64(ct);
+        nonce = nacl.util.decodeBase64(nonce);
 
-        const plaintext = nacl.secretbox.open(
-            nacl.util.decodeBase64(data.ct),
-            nacl.util.decodeBase64(data.nonce),
-            Cryptodog.buddies[sender].mpSecretKey
-        );
+        if (nonceIsUsed(nonce)) {
+            throw new Error('nonce reuse');
+        }
+        markNonceUsed(nonce);
+
+        const plaintext = nacl.secretbox.open(ct, nonce, Cryptodog.buddies[sender].mpSecretKey);
         if (!plaintext) {
             throw new Error(`failed to decrypt DM from ${sender}`);
         }
@@ -81,6 +92,7 @@ Cryptodog.multiParty = function () { };
 
         for (var i = 0; i < sortedRecipients.length; i++) {
             const nonce = crypto.getRandomValues(new Uint8Array(nacl.secretbox.nonceLength));
+            markNonceUsed(nonce);
             encrypted['text'][sortedRecipients[i]] = {};
             encrypted['text'][sortedRecipients[i]]['message'] = nacl.util.encodeBase64(
                 nacl.secretbox(message,
@@ -186,9 +198,12 @@ Cryptodog.multiParty = function () { };
 
                 const box = nacl.util.decodeBase64(text[myName]['message']);
                 const nonce = nacl.util.decodeBase64(text[myName]['nonce']);
+                if (nonceIsUsed(nonce)) {
+                    throw new Error('nonce reuse');
+                }
+                markNonceUsed(nonce);
 
                 // TODO: verify 1) that no recipient's ciphertext was tampered with and 2) that everyone received the same plaintext
-                // TODO: detect replay attacks
                 const plaintext = nacl.secretbox.open(box, nonce, buddy.mpSecretKey);
                 if (!plaintext) {
                     Cryptodog.multiParty.messageWarning(sender);
