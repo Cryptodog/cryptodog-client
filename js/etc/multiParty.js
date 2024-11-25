@@ -138,7 +138,7 @@ Cryptodog.multiParty = function () { };
             }
 
             // TODO: check whether this needs to be put back into a worker
-            buddy.peerKey = await Cryptodog.keys.derivePeerKey(Cryptodog.me.mpPrivateKey, publicKey, Cryptodog.me.roomSecret);
+            buddy.peerKey = Cryptodog.keys.derivePeerKey(Cryptodog.me.mpPrivateKey, publicKey, Cryptodog.me.roomKey);
             buddy.mpPublicKey = publicKey;
 
             // TODO: set fingerprint/safety number for buddy

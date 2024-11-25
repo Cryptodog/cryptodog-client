@@ -1,10 +1,13 @@
 Cryptodog.keys = function () {
+    'use strict';
+
     // a static salt is very much not ideal, but still better than the previous status quo of plaintext room names
     const baseKeySalt = '22ee85c3b14f73305d75d9c66f7687ef';
-    const hkdfSalt = new Uint8Array(16);
-    const roomIdInfo = 'cryptodog room id';
-    const roomSecretInfo = 'cryptodog room secret';
-    const peerKeyInfo = 'peer key';
+    const roomIdLength = 16;
+    const roomKeyLength = 32;
+    const roomIdCtx = 'room id';
+    const roomKeyCtx = 'room key';
+    const peerKeyCtx = 'peer key';
 
     function newPrivateKey() {
         return nacl.randomBytes(nacl.scalarMult.scalarLength);
@@ -14,69 +17,41 @@ Cryptodog.keys = function () {
         return nacl.scalarMult.base(privateKey);
     }
 
-    async function derivePeerKey(myPrivateKey, theirPublicKey, roomSecret) {
-        const peerKeyBits = 8 * nacl.secretbox.keyLength;
-
-        const hkdfInput = new Uint8Array([...nacl.scalarMult(myPrivateKey, theirPublicKey), ...roomSecret]);
-        const hdfkInputImported = await importForHkdf(hkdfInput);
-
-        return new Uint8Array(
-            await hkdf(hdfkInputImported,
-                hkdfSalt,
-                peerKeyInfo,
-                peerKeyBits
-            )
+    function derivePeerKey(myPrivateKey, theirPublicKey, roomKey) {
+        if (roomKey.length !== roomKeyLength) {
+            throw new Error('invalid room key length');
+        }
+        const keyMaterial = Cryptodog.sodium.crypto_generichash(
+            Cryptodog.sodium.crypto_kdf_KEYBYTES,
+            new Uint8Array([
+                ...nacl.scalarMult(myPrivateKey, theirPublicKey),
+                ...roomKey
+            ])
         );
+        return Cryptodog.sodium.crypto_kdf_derive_from_key(nacl.secretbox.keyLength, 1, peerKeyCtx, keyMaterial);
     }
 
     async function deriveFromRoomName(roomName) {
         // derive base key from room name
-        const baseKey = await argon2.hash({
+        const baseKey = (await argon2.hash({
             pass: roomName,
             salt: baseKeySalt,
             type: argon2.ArgonType.Argon2id,
-        });
-        const baseKeyImported = await importForHkdf(baseKey.hash);
+            hashLen: Cryptodog.sodium.crypto_kdf_KEYBYTES,
+        })).hash;
 
         // derive room id (public value sent to server) from base key
         const roomId = arrayBufferToHex(
-            await hkdf(baseKeyImported, hkdfSalt, roomIdInfo, 128)
+            Cryptodog.sodium.crypto_kdf_derive_from_key(roomIdLength, 1, roomIdCtx, baseKey)
         );
-
         // derive room secret from base key
-        const roomSecret = await hkdf(baseKeyImported, hkdfSalt, roomSecretInfo, 256);
+        const roomKey = Cryptodog.sodium.crypto_kdf_derive_from_key(roomKeyLength, 2, roomKeyCtx, baseKey);
 
         return {
             roomId,
-            roomSecret: new Uint8Array(roomSecret)
+            roomKey
         };
     };
-
-    function hkdf(keyImported, salt, info, numBits) {
-        if (numBits < 128) {
-            throw new Error(`numBits too small for hkdf (${numBits} < 128)`);
-        }
-        return crypto.subtle.deriveBits(
-            {
-                name: 'HKDF',
-                salt: salt,
-                info: new TextEncoder().encode(info),
-                hash: 'SHA-512'
-            },
-            keyImported,
-            numBits,
-        );
-    }
-
-    function importForHkdf(key) {
-        return crypto.subtle.importKey(
-            'raw',
-            key,
-            'HKDF',
-            false,
-            ['deriveBits']
-        );
-    }
 
     function arrayBufferToHex(buf) {
         return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');

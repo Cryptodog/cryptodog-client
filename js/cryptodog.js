@@ -15,7 +15,7 @@ Cryptodog.me = {
 	conversation:  		null, // the room id sent to the server, derived from room name
 	conversationReal: 	null, // the real, human-friendly room name
 	nickname:      		null,
-	roomSecret: 		null, // a secret shared among all room members, derived from room name
+	roomKey: 	        null, // a secret shared among all room members, derived from room name
 	otrKey:        		null,
 	fileKey:       		null,
 	mpPrivateKey:  		null,
@@ -1342,7 +1342,7 @@ $('#CryptodogLogin').submit(function() {
 
 		Cryptodog.keys.deriveFromRoomName(conversationName).then((keys) => {
 			Cryptodog.me.conversation = keys.roomId;
-			Cryptodog.me.roomSecret = keys.roomSecret;
+			Cryptodog.me.roomKey = keys.roomKey;
 
 			Cryptodog.xmpp.showKeyPreparationDialog(function () {
 				Cryptodog.me.color = Cryptodog.color.pop();
