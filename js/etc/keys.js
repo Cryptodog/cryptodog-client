@@ -28,7 +28,7 @@ Cryptodog.keys = function () {
                 ...roomKey
             ])
         );
-        return Cryptodog.sodium.crypto_kdf_derive_from_key(nacl.secretbox.keyLength, 1, peerKeyCtx, keyMaterial);
+        return Cryptodog.sodium.crypto_kdf_derive_from_key(nacl.secretbox.keyLength, 1, padContext(peerKeyCtx), keyMaterial);
     }
 
     async function deriveFromRoomName(roomName) {
@@ -42,10 +42,10 @@ Cryptodog.keys = function () {
 
         // derive room id (public value sent to server) from base key
         const roomId = arrayBufferToHex(
-            Cryptodog.sodium.crypto_kdf_derive_from_key(roomIdLength, 1, roomIdCtx, baseKey)
+            Cryptodog.sodium.crypto_kdf_derive_from_key(roomIdLength, 1, padContext(roomIdCtx), baseKey)
         );
         // derive room secret from base key
-        const roomKey = Cryptodog.sodium.crypto_kdf_derive_from_key(roomKeyLength, 2, roomKeyCtx, baseKey);
+        const roomKey = Cryptodog.sodium.crypto_kdf_derive_from_key(roomKeyLength, 2, padContext(roomKeyCtx), baseKey);
 
         return {
             roomId,
@@ -55,6 +55,17 @@ Cryptodog.keys = function () {
 
     function arrayBufferToHex(buf) {
         return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    // context should be an 8-character string: https://libsodium.gitbook.io/doc/key_derivation
+    function padContext(ctx) {
+        if (typeof ctx !== 'string') {
+            throw new Error('invalid context type');
+        }
+        if (ctx.length > Cryptodog.sodium.crypto_kdf_CONTEXTBYTES) {
+            throw new Error('context too long');
+        }
+        return ctx.padEnd(Cryptodog.sodium.crypto_kdf_CONTEXTBYTES, '_');
     }
 
     Uint8Array.prototype.arrayEquals = function (otherArray) {
