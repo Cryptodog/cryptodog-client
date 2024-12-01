@@ -13,14 +13,6 @@ Cryptodog.multiParty = function () { };
         return usedNonces.has(nacl.util.encodeBase64(nonce));
     }
 
-    Cryptodog.multiParty.genPrivateKey = function () {
-        return Cryptodog.keys.newPrivateKey();
-    };
-
-    Cryptodog.multiParty.genPublicKey = function (privateKey) {
-        return Cryptodog.keys.publicKeyFromPrivate(privateKey);
-    };
-
     Cryptodog.multiParty.PublicKey = function (key) {
         this.type = 'public_key';
         this.text = nacl.util.encodeBase64(key);
@@ -126,20 +118,20 @@ Cryptodog.multiParty = function () { };
             var publicKey = nacl.util.decodeBase64(message.text);
 
             // TODO: verify these checks work as expected
-            if (buddy.mpPublicKey && buddy.mpPublicKey.arrayEquals(publicKey)) {
+            if (buddy.publicKey && buddy.publicKey.arrayEquals(publicKey)) {
                 // We already have this key.
                 return false;
-            } else if (buddy.mpPublicKey && !buddy.mpPublicKey.arrayEquals(publicKey)) {
+            } else if (buddy.publicKey && !buddy.publicKey.arrayEquals(publicKey)) {
                 // If it's a different key than the one we have, warn user.
                 Cryptodog.UI.removeAuthAndWarn(sender);
-            } else if (!buddy.mpPublicKey && buddy.authenticated) {
+            } else if (!buddy.publicKey && buddy.authenticated) {
                 // If we're missing their key and they're authenticated, warn user (prevents a possible active attack).
                 Cryptodog.UI.removeAuthAndWarn(sender);
             }
 
             // TODO: check whether this needs to be put back into a worker
-            buddy.peerKey = Cryptodog.keys.derivePeerKey(Cryptodog.me.mpPrivateKey, publicKey, Cryptodog.me.roomKey);
-            buddy.mpPublicKey = publicKey;
+            buddy.peerKey = Cryptodog.keys.derivePeerKey(Cryptodog.me.keyPair.privateKey, publicKey, Cryptodog.me.roomKey);
+            buddy.publicKey = publicKey;
 
             // TODO: set fingerprint/safety number for buddy
         } else if (type === 'public_key_request') {

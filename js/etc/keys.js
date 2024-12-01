@@ -9,13 +9,9 @@ Cryptodog.keys = function () {
     const roomKeyCtx = 'room key';
     const peerKeyCtx = 'peer key';
 
-    function newPrivateKey() {
-        return nacl.randomBytes(nacl.scalarMult.scalarLength);
-    }
-
-    function publicKeyFromPrivate(privateKey) {
-        return nacl.scalarMult.base(privateKey);
-    }
+    function newKeyPair() {
+        return Cryptodog.sodium.crypto_kx_keypair();
+    };
 
     function derivePeerKey(myPrivateKey, theirPublicKey, roomKey) {
         if (roomKey.length !== roomKeyLength) {
@@ -24,7 +20,7 @@ Cryptodog.keys = function () {
         const keyMaterial = Cryptodog.sodium.crypto_generichash(
             Cryptodog.sodium.crypto_kdf_KEYBYTES,
             new Uint8Array([
-                ...nacl.scalarMult(myPrivateKey, theirPublicKey),
+                ...Cryptodog.sodium.crypto_scalarmult(myPrivateKey, theirPublicKey),
                 ...roomKey
             ])
         );
@@ -81,8 +77,7 @@ Cryptodog.keys = function () {
     };
 
     return {
-        newPrivateKey,
-        publicKeyFromPrivate,
+        newKeyPair,
         derivePeerKey,
         deriveFromRoomName
     };

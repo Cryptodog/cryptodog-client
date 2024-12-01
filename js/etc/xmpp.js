@@ -43,8 +43,7 @@ $(window).ready(function() {
     // Prepares necessary encryption key operations before XMPP connection.
     // Shows a progress bar while doing so.
     Cryptodog.xmpp.showKeyPreparationDialog = function (callback) {
-        Cryptodog.me.mpPrivateKey = Cryptodog.multiParty.genPrivateKey();
-        Cryptodog.me.mpPublicKey = Cryptodog.multiParty.genPublicKey(Cryptodog.me.mpPrivateKey);
+        Cryptodog.me.keyPair = Cryptodog.keys.newKeyPair();
         $('#loginInfo').text(Cryptodog.locale['loginMessage']['generatingKeys']);
         callback();
     }
@@ -318,7 +317,7 @@ $(window).ready(function() {
         Cryptodog.xmpp.connection.muc.message(
             Cryptodog.me.conversation + '@' + Cryptodog.xmpp.currentServer.conference,
             null,
-            JSON.stringify(new Cryptodog.multiParty.PublicKey(Cryptodog.me.mpPublicKey)),
+            JSON.stringify(new Cryptodog.multiParty.PublicKey(Cryptodog.me.keyPair.publicKey)),
             null,
             'groupchat',
             'active'

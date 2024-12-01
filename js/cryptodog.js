@@ -16,10 +16,8 @@ Cryptodog.me = {
 	conversationReal: 	null, // the real, human-friendly room name
 	nickname:      		null,
 	roomKey: 	        null, // a secret shared among all room members, derived from room name
-	otrKey:        		null,
 	fileKey:       		null,
-	mpPrivateKey:  		null,
-	mpPublicKey:   		null,
+	keyPair:  	        null,
 	mpFingerprint: 		null,
 	currentBuddy:  		null,
 	color:         		"#FFF" // overwritten on connect
@@ -298,7 +296,7 @@ var Buddy = function(nickname, id, status) {
 	this.fingerprint    = null
 	this.authenticated  = false
 	this.fileKey        = null
-	this.mpPublicKey    = null
+	this.publicKey      = null
 	this.mpFingerprint  = null
 	this.peerKey        = null
 	this.nickname       = nickname
