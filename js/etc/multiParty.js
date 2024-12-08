@@ -12,6 +12,11 @@ Cryptodog.multiParty = function () { };
     function nonceIsUsed(nonce) {
         return usedNonces.has(Cryptodog.sodium.to_base64(nonce));
     }
+    function getNonce() {
+        const nonce = Cryptodog.sodium.randombytes_buf(Cryptodog.sodium.crypto_secretbox_NONCEBYTES);
+        markNonceUsed(nonce);
+        return nonce;
+    }
 
     Cryptodog.multiParty.PublicKey = function (key) {
         this.type = 'public_key';
@@ -28,8 +33,7 @@ Cryptodog.multiParty = function () { };
     };
 
     Cryptodog.multiParty.encryptDirectMessage = function (recipient, message) {
-        const nonce = Cryptodog.sodium.randombytes_buf(Cryptodog.sodium.crypto_secretbox_NONCEBYTES);
-        markNonceUsed(nonce);
+        const nonce = getNonce();
         const ct = Cryptodog.sodium.crypto_secretbox_easy(
             Cryptodog.sodium.from_string(message),
             nonce,
@@ -78,8 +82,7 @@ Cryptodog.multiParty = function () { };
         sortedRecipients.sort();
 
         for (var i = 0; i < sortedRecipients.length; i++) {
-            const nonce = Cryptodog.sodium.randombytes_buf(Cryptodog.sodium.crypto_secretbox_NONCEBYTES);
-            markNonceUsed(nonce);
+            const nonce = getNonce();
             encrypted['text'][sortedRecipients[i]] = {};
             encrypted['text'][sortedRecipients[i]]['message'] = Cryptodog.sodium.to_base64(
                 Cryptodog.sodium.crypto_secretbox_easy(
