@@ -394,6 +394,12 @@ Cryptodog.UI = {
         $('#fill').animate({ width: '100%', opacity: '1' }, 10000, 'linear');
     },
 
+    // Issue a warning for decryption failure
+    messageWarning: function (sender, isDM) {
+        var messageWarning = Cryptodog.locale['warnings']['messageWarning'].replace('(NICKNAME)', sender);
+        Cryptodog.addToConversation(messageWarning, sender, isDM ? Cryptodog.buddies[sender].id : 'groupChat', 'warning');
+    },
+
     /*
 	-------------------
 	USER INTERFACE BINDINGS

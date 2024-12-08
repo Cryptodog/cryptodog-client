@@ -213,7 +213,8 @@ $(window).ready(function() {
             try {
                 body = await Cryptodog.multiParty.receiveMessage(nickname, Cryptodog.me.nickname, body);
             } catch (e) {
-                console.warn('xmpp: exception handling multiParty message from ' + nickname + ': ' + e);
+                console.warn('xmpp: exception handling group message from ' + nickname + ': ' + e);
+                Cryptodog.UI.messageWarning(nickname, false);
                 return true;
             }
 
@@ -233,7 +234,8 @@ $(window).ready(function() {
             try {
                 dm = Cryptodog.multiParty.decryptDirectMessage(nickname, body);
             } catch (e) {
-                console.log(`xmpp: exception handling direct message from ${nickname}: ${e}`);
+                console.warn(`xmpp: exception handling direct message from ${nickname}: ${e}`);
+                Cryptodog.UI.messageWarning(nickname, true);
                 return true;
             }
 

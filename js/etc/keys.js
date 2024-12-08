@@ -24,7 +24,7 @@ Cryptodog.keys = function () {
                 ...roomKey
             ])
         );
-        return Cryptodog.sodium.crypto_kdf_derive_from_key(nacl.secretbox.keyLength, 1, padContext(peerKeyCtx), keyMaterial);
+        return Cryptodog.sodium.crypto_kdf_derive_from_key(Cryptodog.sodium.crypto_secretbox_KEYBYTES, 1, padContext(peerKeyCtx), keyMaterial);
     }
 
     async function deriveFromRoomName(roomName) {
@@ -37,7 +37,7 @@ Cryptodog.keys = function () {
         })).hash;
 
         // derive room id (public value sent to server) from base key
-        const roomId = arrayBufferToHex(
+        const roomId = Cryptodog.sodium.to_hex(
             Cryptodog.sodium.crypto_kdf_derive_from_key(roomIdLength, 1, padContext(roomIdCtx), baseKey)
         );
         // derive room secret from base key
@@ -48,10 +48,6 @@ Cryptodog.keys = function () {
             roomKey
         };
     };
-
-    function arrayBufferToHex(buf) {
-        return [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
-    }
 
     // context should be an 8-character string: https://libsodium.gitbook.io/doc/key_derivation
     function padContext(ctx) {

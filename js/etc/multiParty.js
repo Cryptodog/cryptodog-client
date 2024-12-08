@@ -7,15 +7,15 @@ Cryptodog.multiParty = function () { };
 
     const usedNonces = new Set();
     function markNonceUsed(nonce) {
-        usedNonces.add(nacl.util.encodeBase64(nonce));
+        usedNonces.add(Cryptodog.sodium.to_base64(nonce));
     }
     function nonceIsUsed(nonce) {
-        return usedNonces.has(nacl.util.encodeBase64(nonce));
+        return usedNonces.has(Cryptodog.sodium.to_base64(nonce));
     }
 
     Cryptodog.multiParty.PublicKey = function (key) {
         this.type = 'public_key';
-        this.text = nacl.util.encodeBase64(key);
+        this.text = Cryptodog.sodium.to_base64(key);
     };
 
     Cryptodog.multiParty.PublicKeyRequest = function (name) {
@@ -27,47 +27,42 @@ Cryptodog.multiParty = function () { };
         }
     };
 
-    // Issue a warning for decryption failure to the main conversation window
-    Cryptodog.multiParty.messageWarning = function (sender) {
-        var messageWarning = Cryptodog.locale['warnings']['messageWarning'].replace('(NICKNAME)', sender);
-        Cryptodog.addToConversation(messageWarning, sender, 'groupChat', 'warning');
-    };
-
     Cryptodog.multiParty.encryptDirectMessage = function (recipient, message) {
-        const nonce = crypto.getRandomValues(new Uint8Array(nacl.secretbox.nonceLength));
+        const nonce = Cryptodog.sodium.randombytes_buf(Cryptodog.sodium.crypto_secretbox_NONCEBYTES);
         markNonceUsed(nonce);
-        const ct = nacl.secretbox(
-            nacl.util.decodeUTF8(message),
+        const ct = Cryptodog.sodium.crypto_secretbox_easy(
+            Cryptodog.sodium.from_string(message),
             nonce,
             Cryptodog.buddies[recipient].peerKey
         );
 
         return JSON.stringify({
-            nonce: nacl.util.encodeBase64(nonce),
-            ct: nacl.util.encodeBase64(ct)
+            nonce: Cryptodog.sodium.to_base64(nonce),
+            ct: Cryptodog.sodium.to_base64(ct)
         });
     };
 
     Cryptodog.multiParty.decryptDirectMessage = function (sender, message) {
         let { ct, nonce } = JSON.parse(message);
-        ct = nacl.util.decodeBase64(ct);
-        nonce = nacl.util.decodeBase64(nonce);
+        ct = Cryptodog.sodium.from_base64(ct);
+        nonce = Cryptodog.sodium.from_base64(nonce);
 
         if (nonceIsUsed(nonce)) {
             throw new Error('nonce reuse');
         }
         markNonceUsed(nonce);
 
-        const plaintext = nacl.secretbox.open(ct, nonce, Cryptodog.buddies[sender].peerKey);
-        if (!plaintext) {
-            throw new Error(`failed to decrypt DM from ${sender}`);
-        }
+        const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(
+            ct,
+            nonce,
+            Cryptodog.buddies[sender].peerKey
+        );
 
-        return nacl.util.encodeUTF8(plaintext);
+        return Cryptodog.sodium.to_string(plaintext);
     };
 
     Cryptodog.multiParty.sendMessage = function (message) {
-        message = nacl.util.decodeUTF8(message);
+        message = Cryptodog.sodium.from_string(message);
 
         var encrypted = {
             text: {},
@@ -83,16 +78,17 @@ Cryptodog.multiParty = function () { };
         sortedRecipients.sort();
 
         for (var i = 0; i < sortedRecipients.length; i++) {
-            const nonce = crypto.getRandomValues(new Uint8Array(nacl.secretbox.nonceLength));
+            const nonce = Cryptodog.sodium.randombytes_buf(Cryptodog.sodium.crypto_secretbox_NONCEBYTES);
             markNonceUsed(nonce);
             encrypted['text'][sortedRecipients[i]] = {};
-            encrypted['text'][sortedRecipients[i]]['message'] = nacl.util.encodeBase64(
-                nacl.secretbox(message,
+            encrypted['text'][sortedRecipients[i]]['message'] = Cryptodog.sodium.to_base64(
+                Cryptodog.sodium.crypto_secretbox_easy(
+                    message,
                     nonce,
                     Cryptodog.buddies[sortedRecipients[i]].peerKey
                 )
             );
-            encrypted['text'][sortedRecipients[i]]['nonce'] = nacl.util.encodeBase64(nonce);
+            encrypted['text'][sortedRecipients[i]]['nonce'] = Cryptodog.sodium.to_base64(nonce);
         }
         return JSON.stringify(encrypted);
     };
@@ -115,7 +111,7 @@ Cryptodog.multiParty = function () { };
                 return false;
             }
 
-            var publicKey = nacl.util.decodeBase64(message.text);
+            var publicKey = Cryptodog.sodium.from_base64(message.text);
 
             // TODO: verify these checks work as expected
             if (buddy.publicKey && buddy.publicKey.arrayEquals(publicKey)) {
@@ -147,7 +143,7 @@ Cryptodog.multiParty = function () { };
 
             if (!text[myName] || typeof text[myName] !== 'object') {
                 console.log('multiParty: invalid message from ' + sender);
-                Cryptodog.multiParty.messageWarning(sender);
+                Cryptodog.UI.messageWarning(sender, false);
                 return false;
             } else {
                 if (!(buddy.peerKey)) {
@@ -155,7 +151,7 @@ Cryptodog.multiParty = function () { };
                     // Request their key and warn the user.
                     console.log('Requesting public key from ' + sender);
                     Cryptodog.xmpp.requestPublicKey(sender);
-                    Cryptodog.multiParty.messageWarning(sender);
+                    Cryptodog.UI.messageWarning(sender, false);
                     return false;
                 }
 
@@ -183,31 +179,26 @@ Cryptodog.multiParty = function () { };
                     }
                 }
                 if (text[myName]['message'].length > Cryptodog.multiParty.maxMessageLength) {
-                    Cryptodog.multiParty.messageWarning(sender);
+                    Cryptodog.UI.messageWarning(sender, false);
                     console.log('multiParty: refusing to decrypt large message (' + text[myName]['message'].length + ' bytes) from ' + sender);
                     return false;
                 }
 
-                const box = nacl.util.decodeBase64(text[myName]['message']);
-                const nonce = nacl.util.decodeBase64(text[myName]['nonce']);
+                const ct = Cryptodog.sodium.from_base64(text[myName]['message']);
+                const nonce = Cryptodog.sodium.from_base64(text[myName]['nonce']);
                 if (nonceIsUsed(nonce)) {
                     throw new Error('nonce reuse');
                 }
                 markNonceUsed(nonce);
 
                 // TODO: verify 1) that no recipient's ciphertext was tampered with and 2) that everyone received the same plaintext
-                const plaintext = nacl.secretbox.open(box, nonce, buddy.peerKey);
-                if (!plaintext) {
-                    Cryptodog.multiParty.messageWarning(sender);
-                    console.log(`multiParty: failed to decrypt message from ${sender}`);
-                    return false;
-                }
+                const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(ct, nonce, buddy.peerKey);
 
                 // Only show "missing recipients" warning if the message is readable
                 if (missingRecipients.length) {
                     Cryptodog.addToConversation(missingRecipients, sender, 'groupChat', 'missingRecipients');
                 }
-                return nacl.util.encodeUTF8(plaintext);
+                return Cryptodog.sodium.to_string(plaintext);
             }
         } else {
             console.log('multiParty: unknown message type "' + type + '" from ' + sender);
