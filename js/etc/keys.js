@@ -7,13 +7,14 @@ Cryptodog.keys = function () {
     const roomKeyLength = 32;
     const roomIdCtx = 'room id';
     const roomKeyCtx = 'room key';
-    const peerKeyCtx = 'peer key';
+    const messageKeyCtx = 'msg key';
+    const fileKeyCtx = 'file key';
 
     function newKeyPair() {
         return Cryptodog.sodium.crypto_kx_keypair();
     };
 
-    function derivePeerKey(myPrivateKey, theirPublicKey, roomKey) {
+    function derivePeerKeys(myPrivateKey, theirPublicKey, roomKey) {
         if (roomKey.length !== roomKeyLength) {
             throw new Error('invalid room key length');
         }
@@ -24,7 +25,23 @@ Cryptodog.keys = function () {
                 ...roomKey
             ])
         );
-        return Cryptodog.sodium.crypto_kdf_derive_from_key(Cryptodog.sodium.crypto_secretbox_KEYBYTES, 1, padContext(peerKeyCtx), keyMaterial);
+        const messageKey = Cryptodog.sodium.crypto_kdf_derive_from_key(
+            Cryptodog.sodium.crypto_secretbox_KEYBYTES,
+            1,
+            padContext(messageKeyCtx),
+            keyMaterial
+        );
+        const fileKey = Cryptodog.sodium.crypto_kdf_derive_from_key(
+            Cryptodog.sodium.crypto_secretstream_xchacha20poly1305_KEYBYTES,
+            2,
+            padContext(fileKeyCtx),
+            keyMaterial
+        );
+
+        return {
+            messageKey,
+            fileKey,
+        };
     }
 
     async function deriveFromRoomName(roomName) {
@@ -74,7 +91,7 @@ Cryptodog.keys = function () {
 
     return {
         newKeyPair,
-        derivePeerKey,
+        derivePeerKeys,
         deriveFromRoomName
     };
 }();

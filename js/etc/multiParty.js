@@ -37,7 +37,7 @@ Cryptodog.multiParty = function () { };
         const ct = Cryptodog.sodium.crypto_secretbox_easy(
             Cryptodog.sodium.from_string(message),
             nonce,
-            Cryptodog.buddies[recipient].peerKey
+            Cryptodog.buddies[recipient].messageKey
         );
 
         return JSON.stringify({
@@ -59,7 +59,7 @@ Cryptodog.multiParty = function () { };
         const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(
             ct,
             nonce,
-            Cryptodog.buddies[sender].peerKey
+            Cryptodog.buddies[sender].messageKey
         );
 
         return Cryptodog.sodium.to_string(plaintext);
@@ -75,7 +75,7 @@ Cryptodog.multiParty = function () { };
 
         var sortedRecipients = [];
         for (var b in Cryptodog.buddies) {
-            if (Cryptodog.buddies[b].peerKey) {
+            if (Cryptodog.buddies[b].messageKey) {
                 sortedRecipients.push(b);
             }
         }
@@ -88,7 +88,7 @@ Cryptodog.multiParty = function () { };
                 Cryptodog.sodium.crypto_secretbox_easy(
                     message,
                     nonce,
-                    Cryptodog.buddies[sortedRecipients[i]].peerKey
+                    Cryptodog.buddies[sortedRecipients[i]].messageKey
                 )
             );
             encrypted['text'][sortedRecipients[i]]['nonce'] = Cryptodog.sodium.to_base64(nonce);
@@ -129,7 +129,13 @@ Cryptodog.multiParty = function () { };
             }
 
             // TODO: check whether this needs to be put back into a worker
-            buddy.peerKey = Cryptodog.keys.derivePeerKey(Cryptodog.me.keyPair.privateKey, publicKey, Cryptodog.me.roomKey);
+            const peerKeys = Cryptodog.keys.derivePeerKeys(
+                Cryptodog.me.keyPair.privateKey,
+                publicKey,
+                Cryptodog.me.roomKey
+            );
+            buddy.messageKey = peerKeys.messageKey;
+            buddy.fileKey = peerKeys.fileKey;
             buddy.publicKey = publicKey;
 
             // TODO: set fingerprint/safety number for buddy
@@ -149,7 +155,7 @@ Cryptodog.multiParty = function () { };
                 Cryptodog.UI.messageWarning(sender, false);
                 return false;
             } else {
-                if (!(buddy.peerKey)) {
+                if (!(buddy.messageKey)) {
                     // We don't have the sender's key - they're "borked".
                     // Request their key and warn the user.
                     console.log('Requesting public key from ' + sender);
@@ -195,7 +201,7 @@ Cryptodog.multiParty = function () { };
                 markNonceUsed(nonce);
 
                 // TODO: verify 1) that no recipient's ciphertext was tampered with and 2) that everyone received the same plaintext
-                const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(ct, nonce, buddy.peerKey);
+                const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(ct, nonce, buddy.messageKey);
 
                 // Only show "missing recipients" warning if the message is readable
                 if (missingRecipients.length) {

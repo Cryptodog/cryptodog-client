@@ -16,7 +16,6 @@ Cryptodog.me = {
 	conversationReal: 	null, // the real, human-friendly room name
 	nickname:      		null,
 	roomKey: 	        null, // a secret shared among all room members, derived from room name
-	fileKey:       		null,
 	keyPair:  	        null,
 	mpFingerprint: 		null,
 	currentBuddy:  		null,
@@ -293,14 +292,12 @@ Cryptodog.maxMessageInterval = 3000;
 // Buddy constructor
 var Buddy = function(nickname, id, status) {
 	this.id             = id
+	this.nickname       = nickname
 	this.fingerprint    = null
 	this.authenticated  = false
-	this.fileKey        = null
 	this.publicKey      = null
-	this.mpFingerprint  = null
-	this.peerKey        = null
-	this.nickname       = nickname
-	this.genFingerState = null
+	this.messageKey     = null	// Shared secret for encrypting chat messages
+	this.fileKey        = null	// Shared secret for encrypting files
 	this.status         = status
 	this.color          = Cryptodog.color.pop();
 	
@@ -693,6 +690,9 @@ Cryptodog.displayInfo = function(nickname) {
 
 // Executes on user logout.
 Cryptodog.logout = function() {
+	Cryptodog.me.roomKey = null;
+	Cryptodog.me.keyPair = null;
+
 	Cryptodog.UI.logout();
 	Cryptodog.loginError = false;
 	Cryptodog.xmpp.connection.muc.leave(
@@ -702,8 +702,13 @@ Cryptodog.logout = function() {
 	Cryptodog.xmpp.connection.disconnect();
 	Cryptodog.xmpp.connection = null;
 
+	Cryptodog.me.conversation = null;
+	Cryptodog.me.conversationReal = null;
+
 	for (var b in Cryptodog.buddies) {
 		if (Cryptodog.buddies.hasOwnProperty(b)) {
+			Cryptodog.buddies[b].messageKey = null;
+			Cryptodog.buddies[b].fileKey = null;
 			delete Cryptodog.buddies[b];
 		}
 	}
