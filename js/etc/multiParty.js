@@ -5,6 +5,7 @@ Cryptodog.multiParty = function () { };
 
     Cryptodog.multiParty.maxMessageLength = 5000;
 
+    // Track used and seen nonces to prevent replay attacks
     const usedNonces = new Set();
     function markNonceUsed(nonce) {
         usedNonces.add(Cryptodog.sodium.to_base64(nonce));
@@ -13,6 +14,7 @@ Cryptodog.multiParty = function () { };
         return usedNonces.has(Cryptodog.sodium.to_base64(nonce));
     }
     function getNonce() {
+        // It's safe to generate a random nonce of this length without checking for reuse
         const nonce = Cryptodog.sodium.randombytes_buf(Cryptodog.sodium.crypto_secretbox_NONCEBYTES);
         markNonceUsed(nonce);
         return nonce;
