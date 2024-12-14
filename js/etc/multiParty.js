@@ -20,6 +20,20 @@ Cryptodog.multiParty = function () { };
         return nonce;
     }
 
+    function encrypt(message, key) {
+        const nonce = getNonce();
+        const ciphertext = Cryptodog.sodium.crypto_secretbox_easy(message, nonce, key);
+        return { nonce, ciphertext };
+    }
+
+    function decrypt(ciphertext, nonce, key) {
+        if (nonceIsUsed(nonce)) {
+            throw new Error('nonce already seen, possible replay attack');
+        }
+        markNonceUsed(nonce);
+        return Cryptodog.sodium.crypto_secretbox_open_easy(ciphertext, nonce, key);
+    }
+
     Cryptodog.multiParty.PublicKey = function (key) {
         this.type = 'public_key';
         this.text = Cryptodog.sodium.to_base64(key);
@@ -34,37 +48,21 @@ Cryptodog.multiParty = function () { };
         }
     };
 
-    Cryptodog.multiParty.encryptDirectMessage = function (recipient, message) {
-        const nonce = getNonce();
-        const ct = Cryptodog.sodium.crypto_secretbox_easy(
-            Cryptodog.sodium.from_string(message),
-            nonce,
-            Cryptodog.buddies[recipient].messageKey
-        );
-
+    Cryptodog.multiParty.encryptDirectMessage = function (message, recipient) {
+        const { nonce, ciphertext } = encrypt(message, Cryptodog.buddies[recipient].messageKey);
         return JSON.stringify({
             nonce: Cryptodog.sodium.to_base64(nonce),
-            ct: Cryptodog.sodium.to_base64(ct)
+            ct: Cryptodog.sodium.to_base64(ciphertext)
         });
     };
 
-    Cryptodog.multiParty.decryptDirectMessage = function (sender, message) {
+    Cryptodog.multiParty.decryptDirectMessage = function (message, sender) {
         let { ct, nonce } = JSON.parse(message);
         ct = Cryptodog.sodium.from_base64(ct);
         nonce = Cryptodog.sodium.from_base64(nonce);
-
-        if (nonceIsUsed(nonce)) {
-            throw new Error('nonce reuse');
-        }
-        markNonceUsed(nonce);
-
-        const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(
-            ct,
-            nonce,
-            Cryptodog.buddies[sender].messageKey
+        return Cryptodog.sodium.to_string(
+            decrypt(ct, nonce, Cryptodog.buddies[sender].messageKey)
         );
-
-        return Cryptodog.sodium.to_string(plaintext);
     };
 
     Cryptodog.multiParty.sendMessage = function (message) {
@@ -84,15 +82,9 @@ Cryptodog.multiParty = function () { };
         sortedRecipients.sort();
 
         for (var i = 0; i < sortedRecipients.length; i++) {
-            const nonce = getNonce();
             encrypted['text'][sortedRecipients[i]] = {};
-            encrypted['text'][sortedRecipients[i]]['message'] = Cryptodog.sodium.to_base64(
-                Cryptodog.sodium.crypto_secretbox_easy(
-                    message,
-                    nonce,
-                    Cryptodog.buddies[sortedRecipients[i]].messageKey
-                )
-            );
+            const { nonce, ciphertext } = encrypt(message, Cryptodog.buddies[sortedRecipients[i]].messageKey);
+            encrypted['text'][sortedRecipients[i]]['message'] = Cryptodog.sodium.to_base64(ciphertext);
             encrypted['text'][sortedRecipients[i]]['nonce'] = Cryptodog.sodium.to_base64(nonce);
         }
         return JSON.stringify(encrypted);
@@ -195,21 +187,17 @@ Cryptodog.multiParty = function () { };
                     return false;
                 }
 
-                const ct = Cryptodog.sodium.from_base64(text[myName]['message']);
+                const ciphertext = Cryptodog.sodium.from_base64(text[myName]['message']);
                 const nonce = Cryptodog.sodium.from_base64(text[myName]['nonce']);
-                if (nonceIsUsed(nonce)) {
-                    throw new Error('nonce reuse');
-                }
-                markNonceUsed(nonce);
 
                 // TODO: verify 1) that no recipient's ciphertext was tampered with and 2) that everyone received the same plaintext
-                const plaintext = Cryptodog.sodium.crypto_secretbox_open_easy(ct, nonce, buddy.messageKey);
+                const plaintext = Cryptodog.sodium.to_string(decrypt(ciphertext, nonce, buddy.messageKey));
 
                 // Only show "missing recipients" warning if the message is readable
                 if (missingRecipients.length) {
                     Cryptodog.addToConversation(missingRecipients, sender, 'groupChat', 'missingRecipients');
                 }
-                return Cryptodog.sodium.to_string(plaintext);
+                return plaintext;
             }
         } else {
             console.log('multiParty: unknown message type "' + type + '" from ' + sender);

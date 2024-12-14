@@ -232,7 +232,7 @@ $(window).ready(function() {
 
             let dm;
             try {
-                dm = Cryptodog.multiParty.decryptDirectMessage(nickname, body);
+                dm = Cryptodog.multiParty.decryptDirectMessage(body, nickname);
             } catch (e) {
                 console.warn(`xmpp: exception handling direct message from ${nickname}: ${e}`);
                 Cryptodog.UI.messageWarning(nickname, true);

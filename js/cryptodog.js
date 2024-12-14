@@ -1152,7 +1152,7 @@ $('#userInput').submit(function() {
 	if (!message.length) { return false }
 	if (Cryptodog.me.currentBuddy !== 'groupChat') {
 		const recipient = Cryptodog.getBuddyNicknameByID(Cryptodog.me.currentBuddy);
-		const dm = Cryptodog.multiParty.encryptDirectMessage(recipient, message);
+		const dm = Cryptodog.multiParty.encryptDirectMessage(message, recipient);
 
 		Cryptodog.xmpp.connection.muc.message(
 			Cryptodog.me.conversation + '@' + Cryptodog.xmpp.currentServer.conference,
