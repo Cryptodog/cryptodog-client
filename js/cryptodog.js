@@ -9,17 +9,18 @@ GLOBAL VARIABLES
 Cryptodog.version = '2.6.0'
 
 Cryptodog.me = {
-	newMessages:   		0,
-	windowFocus:   		true,
-	composing:     		false,
-	conversation:  		null, // the room id sent to the server, derived from room name
-	conversationReal: 	null, // the real, human-friendly room name
-	nickname:      		null,
-	roomKey: 	        null, // a secret shared among all room members, derived from room name
-	keyPair:  	        null,
-	mpFingerprint: 		null,
-	currentBuddy:  		null,
-	color:         		"#FFF" // overwritten on connect
+	newMessages: 0,
+	windowFocus: true,
+	composing: false,
+	conversation: null, // The room id sent to the server, derived from room name
+	conversationReal: null, // The real, human-friendly room name
+	nickname: null,
+	roomKey: null, // A secret known by all room members, derived from room name
+	keyPair: null, // Ephemeral key pair
+	groupKey: null, // Symmetric key for group messages that enables server-side fan-out
+	mpFingerprint: null,
+	currentBuddy: null,
+	color: "#FFF" // Overwritten on connect
 }
 
 Cryptodog.buddies = {}
@@ -291,15 +292,16 @@ Cryptodog.maxMessageInterval = 3000;
 
 // Buddy constructor
 var Buddy = function(nickname, id, status) {
-	this.id             = id
-	this.nickname       = nickname
-	this.fingerprint    = null
-	this.authenticated  = false
-	this.publicKey      = null
-	this.messageKey     = null	// Shared secret for encrypting chat messages
-	this.fileKey        = null	// Shared secret for encrypting files
-	this.status         = status
-	this.color          = Cryptodog.color.pop();
+	this.id = id;
+	this.nickname = nickname;
+	this.fingerprint = null;
+	this.authenticated = false;
+	this.publicKey = null;
+	this.messageKey = null; // Shared secret for encrypting direct chat messages
+	this.groupKey = null; // Symmetric key for encrypting group chat messages
+	this.fileKey = null; // Shared secret for encrypting files
+	this.status = status;
+	this.color = Cryptodog.color.pop();
 	
 	// Regularly reset at the interval defined by Cryptodog.maxMessageInterval
 	this.messageCount   = 0
@@ -1346,6 +1348,7 @@ $('#CryptodogLogin').submit(function() {
 		Cryptodog.keys.deriveFromRoomName(conversationName).then((keys) => {
 			Cryptodog.me.conversation = keys.roomId;
 			Cryptodog.me.roomKey = keys.roomKey;
+			Cryptodog.me.groupKey = Cryptodog.keys.newGroupKey();
 
 			Cryptodog.xmpp.showKeyPreparationDialog(function () {
 				Cryptodog.me.color = Cryptodog.color.pop();

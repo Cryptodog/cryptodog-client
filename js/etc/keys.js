@@ -14,6 +14,10 @@ Cryptodog.keys = function () {
         return Cryptodog.sodium.crypto_kx_keypair();
     };
 
+    function newGroupKey() {
+        return Cryptodog.sodium.crypto_secretbox_keygen();
+    }
+
     function derivePeerKeys(myPrivateKey, theirPublicKey, roomKey) {
         if (roomKey.length !== roomKeyLength) {
             throw new Error('invalid room key length');
@@ -92,6 +96,7 @@ Cryptodog.keys = function () {
     return {
         newKeyPair,
         derivePeerKeys,
+        newGroupKey,
         deriveFromRoomName
     };
 }();
